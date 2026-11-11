@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7f4" />
+    <meta name="description" content="Find your path forward. Book a one-on-one session with a student advisor." />
+    <title>Advisr — Student advising, made simple</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="login-screen" id="loginScreen">
+      <section class="login-panel" aria-labelledby="loginHeading">
+        <a class="brand login-brand" href="#" aria-label="Advisr home">
+          <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+          <span>advisr<span class="brand-period">.</span></span>
+        </a>
+        <div class="login-welcome">
+          <span class="login-kicker">POLK STATE COLLEGE</span>
+          <h1 id="loginHeading">Welcome to advising<span class="brand-period">.</span></h1>
+          <p>Sign in to find your next step, or manage your advising schedule.</p>
+        </div>
+        <form id="loginForm">
+          <div class="dialog-field">
+            <label for="loginRole">I’m signing in as</label>
+            <select id="loginRole" name="role" required>
+              <option value="student">Student</option>
+              <option value="advisor">Advisor</option>
+            </select>
+          </div>
+          <div class="dialog-field hidden" id="loginAdvisorField">
+            <label for="loginAdvisor">Advisor profile</label>
+            <select id="loginAdvisor" name="advisorId">
+              <option value="chen">Dr. Maya Chen · Academic planning</option>
+              <option value="brooks">Jordan Brooks · Career &amp; internships</option>
+              <option value="rivera">Sofia Rivera · Wellbeing &amp; balance</option>
+              <option value="patel">Samir Patel · Financial aid</option>
+            </select>
+          </div>
+          <div class="dialog-field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" name="password" type="password" inputmode="numeric" autocomplete="current-password" required />
+          </div>
+          <p class="login-error hidden" id="loginError" role="alert"></p>
+          <button class="login-submit" type="submit">Continue <span>→</span></button>
+        </form>
+        <p class="login-demo-note"><strong>Demo access:</strong> Student password <code>1234</code> · Advisor password <code>12345</code></p>
+        <p class="login-security-note">Demo sign-in only. Do not use real or sensitive information.</p>
+      </section>
+      <div class="login-decoration" aria-hidden="true"><span>✳</span><strong>Your next chapter<br />starts here.</strong><i>✦</i></div>
+    </main>
+    <div class="app-shell hidden" id="appShell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="Advisr home">
+          <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+          <span>advisr<span class="brand-period">.</span></span>
+        </a>
+
+        <div class="campus-switcher">
+          <div class="campus-avatar">N</div>
+          <div class="campus-details"><strong>Polk State College</strong><span id="portalLabel">Student portal</span></div>
+          <span class="chevron">⌄</span>
+        </div>
+
+        <div class="nav-label">MENU</div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a class="nav-item active" href="#booking" data-nav="dashboard"><span class="nav-icon">⌂</span>Dashboard</a>
+          <a class="nav-item" href="#appointments" data-nav="appointments" aria-haspopup="dialog"><span class="nav-icon">▣</span>My appointments</a>
+          <a class="nav-item" href="#advisor-portal" data-nav="advisor"><span class="nav-icon">♙</span>Advisor portal</a>
+          <a class="nav-item" href="#resources" data-nav="resources"><span class="nav-icon">▤</span>Resources</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="help-card" id="helpCard">
+            <div class="help-icon">✳</div>
+            <strong>Need a little help?</strong>
+            <p>Our student success team is always happy to point you in the right direction.</p>
+            <a href="mailto:success@polk.edu">Contact support <span>↗</span></a>
+          </div>
+          <button class="profile-button" type="button" aria-label="Signed in as Austin Rich">
+            <div class="profile-avatar">AR</div>
+            <span class="profile-name"><strong>Austin Rich</strong><small>Class of 2027</small></span>
+            <span class="profile-more">···</span>
+          </button>
+          <button class="sidebar-signout" type="button" data-sign-out>Sign out <span>↗</span></button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb">Polk State College <span>/</span> <strong id="pageTitle">Student dashboard</strong></div>
+          <div class="topbar-actions">
+            <div class="topbar-divider"></div>
+            <span class="user-chip"><span class="profile-avatar small" id="headerAvatar">AR</span><span id="headerUserName">Austin Rich</span></span>
+            <button class="appearance-button" type="button" id="openAppearance" aria-haspopup="dialog">◐ <span>Appearance</span></button>
+            <button class="signout-button" type="button" data-sign-out>Sign out <span>↗</span></button>
+          </div>
+        </header>
+
+        <div class="content-wrap" id="studentDashboard">
+          <section class="welcome-row">
+            <div>
+              <p class="eyebrow"><span class="sun-icon">☼</span> <span id="todayLabel"></span></p>
+              <h1>Good afternoon, Austin <span class="wave">✦</span></h1>
+              <p class="welcome-copy">A little guidance can go a long way. What would you like to work on?</p>
+            </div>
+            <button class="text-button" type="button" id="browseAdvisors">Meet your advisors <span>→</span></button>
+          </section>
+
+          <section class="hero-banner" aria-label="Advising introduction">
+            <div class="hero-copy">
+              <span class="hero-kicker"><span class="sparkle">✳</span> YOUR NEXT CHAPTER STARTS HERE</span>
+              <h2>Big plans? <em>Let’s talk.</em></h2>
+              <p>From picking classes to planning your future, find an advisor who can help you move forward with confidence.</p>
+              <a class="hero-link" href="#booking">Find your advisor <span>↘</span></a>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+              <div class="art-sun"></div><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+              <div class="art-card card-back"><span>YOUR PATH</span><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-badge">✦</div></div>
+              <div class="art-card card-front"><div class="art-avatar">✿</div><div class="art-card-lines"><b></b><i></i></div><div class="art-card-check">✓</div></div>
+              <div class="art-leaf leaf-one">✦</div><div class="art-leaf leaf-two">✳</div>
+            </div>
+            <div class="hero-index">01 <span>———</span> 03</div>
+          </section>
+
+          <div class="section-heading" id="booking">
+            <div><span class="section-kicker">TAKE THE NEXT STEP</span><h2>Book an advising session</h2></div>
+            <div class="secure-note"><span>◉</span> Free for all students</div>
+          </div>
+
+          <section class="booking-layout">
+            <div class="booking-card">
+              <div class="booking-progress">
+                <div class="progress-step" data-step="1"><span>1</span><b>Choose an advisor</b></div>
+                <div class="progress-line" data-progress-line="1"></div>
+                <div class="progress-step" data-step="2"><span>2</span><b>Pick a time</b></div>
+                <div class="progress-line" data-progress-line="2"></div>
+                <div class="progress-step" data-step="3"><span>3</span><b>Your details</b></div>
+              </div>
+
+              <div class="booking-body">
+                <div class="booking-column advisor-column">
+                  <div class="card-title-row"><div><h3>Choose your advisor</h3><p>Find the right person for what’s on your mind.</p></div><select class="filter-button" id="advisorFilter" aria-label="Filter advisors by topic"><option>All topics</option><option>Academics</option><option>Career</option><option>Wellbeing</option><option>Finances</option></select></div>
+                  <div class="advisor-list" id="advisorList" role="list"></div>
+                </div>
+
+                <div class="booking-column time-column">
+                  <div class="card-title-row date-title-row"><div><h3>Pick a date &amp; time</h3><p>All times shown in your local timezone.</p></div><div class="week-nav"><button type="button" id="prevWeek" aria-label="Previous week">‹</button><button type="button" id="nextWeek" aria-label="Next week">›</button></div></div>
+                  <div class="calendar-week" id="calendarWeek" aria-label="Choose a date"></div>
+                  <div class="availability-label"><span>AVAILABLE TIMES</span><span class="timezone">GMT−05:00 <span>⌄</span></span></div>
+                  <div class="time-slots" id="timeSlots"></div>
+                  <p class="no-slots hidden" id="noSlots">No times available for this day. Try another date.</p>
+                  <div class="selection-summary" id="selectionSummary"><span class="summary-icon">◷</span><span>Select an advisor and a time to continue.</span></div>
+                  <button class="continue-button" id="continueButton" type="button" disabled>Continue to your details <span>→</span></button>
+                </div>
+              </div>
+            </div>
+
+            <aside class="side-column">
+              <section class="next-appointment" id="appointments">
+                <div class="aside-heading"><h3>Your next session</h3><a href="#appointments" id="viewAll">View all <span>→</span></a></div>
+                <div id="nextAppointmentContent"></div>
+              </section>
+              <section class="tip-card" id="resources">
+                <div class="tip-top"><span class="tip-icon">✧</span><span>STUDENT TIP</span><span class="tip-dots">···</span></div>
+                <h3>A little prep goes a long way.</h3>
+                <p>Jot down a couple of questions before your session. Your advisor can help you make the most of every minute.</p>
+                <a href="#resources">Explore our student resources <span>↗</span></a>
+                <div class="tip-decoration">✳</div>
+              </section>
+              <div class="quote-card"><span class="quote-mark">“</span><p>I left my session with a plan, not just more questions. It made all the difference.</p><div class="quote-author"><span class="quote-avatar">J</span><span><strong>Jamie R.</strong><small>Psychology, Class of ’26</small></span></div></div>
+            </aside>
+          </section>
+
+          <footer class="page-footer"><span>© 2026 Polk State College</span><span><a href="#privacy">Privacy</a><a href="#accessibility">Accessibility</a><a href="mailto:success@polk.edu">Get help</a></span></footer>
+        </div>
+        <section class="content-wrap advisor-dashboard hidden" id="advisorDashboard">
+          <div class="advisor-dashboard-heading">
+            <div>
+              <p class="eyebrow">ADVISOR PORTAL</p>
+              <h1>Welcome, <span id="advisorWelcomeName"></span></h1>
+              <p class="welcome-copy">Manage your appointment availability and review upcoming sessions.</p>
+            </div>
+            <button class="dialog-secondary" type="button" id="returnToStudent">Sign out</button>
+          </div>
+          <div class="demo-security-note"><strong>Demo mode:</strong> this portal uses a shared browser-only access code and is not secure for real student data.</div>
+          <section class="advisor-management-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">YOUR SCHEDULE</span><h2>Manage available times</h2><p>Select the appointment times students can book for each day.</p></div>
+              <button class="dialog-submit save-availability-button" type="button" id="saveAvailability">Save availability</button>
+            </div>
+            <div id="availabilityStatus" class="availability-status" role="status"></div>
+            <div class="advisor-schedule-grid" id="advisorScheduleEditor"></div>
+          </section>
+          <section class="advisor-management-card advisor-time-off-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">TIME OFF</span><h2>Mark a day unavailable</h2><p>Choose a specific date you’ll be out. Students won’t be able to book you that day.</p></div>
+            </div>
+            <form class="time-off-form" id="timeOffForm">
+              <div class="dialog-field">
+                <label for="timeOffDate">Date you’ll be unavailable</label>
+                <input id="timeOffDate" name="date" type="date" required />
+              </div>
+              <button class="dialog-cancel" type="submit">Mark date unavailable</button>
+            </form>
+            <div id="timeOffStatus" class="availability-status" role="status"></div>
+            <div class="time-off-list" id="timeOffList"></div>
+          </section>
+          <section class="advisor-management-card advisor-appointments-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">YOUR CALENDAR</span><h2>Upcoming appointments</h2><p>Sessions booked with you are listed below.</p></div>
+            </div>
+            <div id="advisorAppointments"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="booking-dialog" id="bookingDialog">
+      <form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Close dialog">×</button></form>
+      <div class="dialog-content" id="dialogContent"></div>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

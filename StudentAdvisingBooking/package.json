@@ -1,0 +1,8 @@
+{
+  "name": "student-advising-booking",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:azure": "node -e \"const fs = require('node:fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.mkdirSync('dist', { recursive: true }); ['index.html', 'styles.css', 'app.js'].forEach(file => fs.copyFileSync(file, 'dist/' + file));\""
+  }
+}
