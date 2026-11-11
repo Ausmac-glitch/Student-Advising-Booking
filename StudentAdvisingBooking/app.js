@@ -1,3 +1,5 @@
+const PRIVATE_ACCESS_TOKEN = "advisr-private-link-2026";
+
 const advisors = [
   { id: "chen", name: "Dr. Maya Chen", role: "Academic planning", initials: "MC", color: "linear-gradient(145deg,#bc846b,#775349)", topic: "Academics" },
   { id: "brooks", name: "Jordan Brooks", role: "Career & internships", initials: "JB", color: "linear-gradient(145deg,#a87578,#654044)", topic: "Career" },
@@ -539,7 +541,35 @@ function openCancelConfirmation(id) {
   dialog.showModal();
 }
 
-function confirmAppointmentCancellation(id) {
+function createEmailDraft(email, subject, body) {
+  if (!email) return null;
+  const params = new URLSearchParams({
+    subject,
+    body,
+  });
+  return `mailto:${encodeURIComponent(email)}?${params.toString()}`;
+}
+
+function sendEmailDraft(email, subject, body) {
+  const mailtoLink = createEmailDraft(email, subject, body);
+  if (!mailtoLink) return false;
+  window.location.href = mailtoLink;
+  return true;
+}
+
+async function confirmAppointmentCancellation(id) {
+  const appointment = readAppointments().find((item) => (item.id || item.createdAt) === id);
+  if (!appointment) {
+    const message = dialogContent.querySelector("#cancelError");
+    if (message) {
+      message.textContent = "That session could not be found. Refresh your appointments and try again.";
+      message.classList.remove("hidden");
+    } else {
+      showToast("That session could not be found. Refresh your appointments and try again.");
+    }
+    return;
+  }
+
   try {
     const appointments = readAppointments();
     const remaining = appointments.filter((item) => (item.id || item.createdAt) !== id);
@@ -590,7 +620,7 @@ function openDetailsDialog() {
   dialog.showModal();
 }
 
-function saveAppointment(event) {
+async function saveAppointment(event) {
   event.preventDefault();
   const form = event.currentTarget;
   if (!form.reportValidity()) return;
@@ -817,6 +847,14 @@ document.querySelector("#loginRole").addEventListener("change", (event) => {
 
 document.querySelector("#loginForm").addEventListener("submit", (event) => {
   event.preventDefault();
+
+  if (!hasPrivateAccess()) {
+    const error = document.querySelector("#loginError");
+    error.textContent = "This site is private. Use the full invite link sent to you.";
+    error.classList.remove("hidden");
+    return;
+  }
+
   const data = new FormData(event.currentTarget);
   const role = String(data.get("role"));
   const password = String(data.get("password"));
@@ -873,7 +911,54 @@ document.querySelectorAll("[data-sign-out]").forEach((button) => {
 document.querySelector(".profile-button").addEventListener("click", signOut);
 document.querySelector("#openAppearance").addEventListener("click", openAppearanceDialog);
 
+function hasPrivateAccess() {
+  const token = new URLSearchParams(window.location.search).get("access");
+  return token === PRIVATE_ACCESS_TOKEN;
+}
+
+function applyPrivateAccessGate() {
+  const loginScreen = document.querySelector("#loginScreen");
+  const appShell = document.querySelector("#appShell");
+  const loginForm = document.querySelector("#loginForm");
+  const loginError = document.querySelector("#loginError");
+
+  if (hasPrivateAccess()) {
+    loginScreen.classList.remove("hidden");
+    appShell.classList.add("hidden");
+    loginError.textContent = "";
+    loginError.classList.add("hidden");
+    loginForm.dataset.privateAccess = "granted";
+    return;
+  }
+
+  loginForm.dataset.privateAccess = "locked";
+  loginForm.querySelectorAll("input, select, button").forEach((element) => {
+    element.disabled = true;
+  });
+
+  loginError.textContent = "This site is private. Use the full invite link sent to you.";
+  loginError.classList.remove("hidden");
+  loginScreen.classList.remove("hidden");
+  appShell.classList.add("hidden");
+
+  const accessNote = document.createElement("p");
+  accessNote.className = "login-security-note";
+  accessNote.textContent = "Private access link required: ?access=advisr-private-link-2026";
+  accessNote.style.marginTop = "0.5rem";
+  accessNote.style.fontWeight = "600";
+  const existingNote = loginForm.querySelector(".login-security-note");
+  if (existingNote) {
+    existingNote.textContent = "Private access link required: ?access=advisr-private-link-2026";
+    existingNote.style.fontWeight = "600";
+  } else {
+    loginForm.prepend(accessNote);
+  }
+}
+
 function initialize() {
+  applyPrivateAccessGate();
+  if (!hasPrivateAccess()) return;
+
   applyTheme("burgundy");
   state.availability = readAvailability();
   state.timeOff = readTimeOff();
