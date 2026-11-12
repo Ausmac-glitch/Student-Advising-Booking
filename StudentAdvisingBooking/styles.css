@@ -47,8 +47,8 @@ a { color: inherit; text-decoration: none; }
 .help-icon { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 8px; background: #e7eee2; color: var(--green); margin-bottom: 12px; font-size: 17px; }
 .help-card strong { display: block; font-size: 11px; }
 .help-card p { color: #838d87; font-size: 10px; line-height: 1.6; margin: 6px 0 12px; }
-.help-card a { color: var(--green); font-size: 10px; font-weight: 700; }
-.help-card a span { padding-left: 4px; }
+.help-card-link { display: inline-flex; align-items: center; border: 0; background: transparent; padding: 0; color: var(--green); font-size: 10px; font-weight: 700; cursor: pointer; }
+.help-card-link span { padding-left: 4px; }
 .profile-button { width: 100%; background: transparent; border: 0; border-top: 1px solid #eef0ed; display: flex; align-items: center; gap: 9px; padding: 15px 4px 0; text-align: left; cursor: pointer; }
 .profile-avatar { width: 31px; height: 31px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #855c43; background: #f1d8c5; font-weight: 700; font-size: 10px; }
 .profile-name { display: grid; gap: 3px; flex: 1; }
@@ -191,22 +191,23 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 .appointment-type { display: inline-flex; align-items: center; color: #598166 !important; background: #e9f1e7; border-radius: 10px; padding: 3px 6px; width: fit-content; margin-top: 2px; }
 .cancel-appointment-button { border: 0; background: transparent; color: #851923; text-align: left; font-size: 8px; font-weight: 700; padding: 3px 0 0; width: fit-content; cursor: pointer; }
 .cancel-appointment-button:hover { color: #5f1016; text-decoration: underline; }
-.tip-card { border-radius: 10px; background: #e8eee1; padding: 15px; position: relative; overflow: hidden; }
+.tip-card { border-radius: 10px; background: #e8eee1; padding: 15px; position: relative; overflow: hidden; cursor: pointer; }
+.tip-card:focus-visible { outline: 3px solid #8b454a; outline-offset: 3px; }
 .tip-top { color: #75876c; font-size: 7px; display: flex; align-items: center; gap: 6px; }
 .tip-icon { color: #72895f; font-size: 14px; }
 .tip-dots { margin-left: auto; font-size: 14px; letter-spacing: 2px; line-height: 5px; }
 .tip-card h3 { font: 700 12px "Manrope", sans-serif; margin: 13px 0 7px; max-width: 150px; line-height: 1.4; position: relative; z-index: 1; }
+.resource-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 7px; position: relative; z-index: 1; }
+.resource-list li { font-size: 9px; line-height: 1.5; color: #728071; list-style: none; }
+.resource-list strong { color: #425448; }
 .tip-card p { font-size: 9px; color: #728071; line-height: 1.65; margin: 0 0 12px; max-width: 185px; position: relative; z-index: 1; }
-.tip-card a { font-size: 8px; font-weight: 700; color: #4f7055; position: relative; z-index: 1; }
-.tip-card a span { margin-left: 3px; font-size: 11px; }
+.tip-card-link { font-size: 8px; font-weight: 700; color: #4f7055; position: relative; z-index: 1; }
+.tip-card-link span { margin-left: 3px; font-size: 11px; }
 .tip-decoration { position: absolute; color: #d9e3ce; font-size: 92px; right: -17px; bottom: -34px; transform: rotate(-15deg); }
-.quote-card { background: white; border: 1px solid #e9ece8; padding: 13px 14px 12px; border-radius: 10px; position: relative; }
-.quote-mark { color: #b9cfad; font: 700 31px Georgia, serif; height: 20px; display: block; }
-.quote-card p { font: 600 10px "Manrope", sans-serif; line-height: 1.55; color: #526057; margin: 2px 0 12px; }
-.quote-author { display: flex; align-items: center; gap: 7px; }
-.quote-avatar { display: grid; place-items: center; height: 25px; width: 25px; color: #815d42; background: #f0dfc9; border-radius: 50%; font-weight: 700; }
-.quote-author > span:nth-child(2) { display: grid; gap: 2px; }
-.quote-author strong { font-size: 8px; }.quote-author small { color: #9aa19c; font-size: 7px; }
+.faq-list { display: grid; gap: 12px; margin: 18px 0 20px; }
+.faq-item { border: 1px solid #eaf0ea; background: #f9faf8; border-radius: 8px; padding: 12px 13px; }
+.faq-item h3 { font: 700 12px "Manrope", sans-serif; margin: 0 0 6px; color: #2d3c35; }
+.faq-item p { margin: 0; color: #697670; font-size: 10px; line-height: 1.6; }
 .page-footer { display: flex; justify-content: space-between; color: #a0a7a2; font-size: 8px; padding: 22px 1px 0; }
 .page-footer > span:last-child { display: flex; gap: 17px; }.page-footer a:hover { color: #547b60; }
 
@@ -256,7 +257,7 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
   .sidebar { width: 68px; padding: 24px 10px 15px; align-items: center; }.brand { padding: 0; }.brand > span:last-child, .campus-details, .campus-switcher .chevron, .nav-label, .nav-item:not(.active), .nav-item.active { font-size: 0; }
   .campus-switcher { border: 0; margin: 29px 0 22px; padding: 0; }.campus-avatar { width: 36px; height: 36px; }
   .main-nav { width: 100%; }.nav-item { justify-content: center; padding: 0; }.nav-icon { font-size: 18px; }.nav-pill, .help-card, .profile-name, .profile-more { display: none; }.profile-button { justify-content: center; padding: 14px 0 0; }.main-content { margin-left: 68px; }
-  .booking-layout { grid-template-columns: minmax(0, 1fr); }.side-column { grid-template-columns: repeat(3, 1fr); }.next-appointment, .tip-card, .quote-card { min-width: 0; }
+  .booking-layout { grid-template-columns: minmax(0, 1fr); }.side-column { grid-template-columns: repeat(3, 1fr); }.next-appointment, .tip-card { min-width: 0; }
 }
 @media (max-width: 680px) {
   .sidebar { width: 54px; padding: 19px 7px 12px; }.brand-mark { width: 20px; height: 20px; }.campus-switcher { margin: 27px 0 19px; }.campus-avatar { width: 32px; height: 32px; }.main-content { margin-left: 54px; }
@@ -266,7 +267,7 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
   .section-heading h2 { font-size: 16px; }.secure-note { font-size: 8px; }.booking-progress { height: 54px; padding: 0 11px; }.progress-step { gap: 4px; font-size: 0; }.progress-step > span { font-size: 9px; width: 20px; height: 20px; }.progress-step b { display: none; }.progress-line { margin: 0 8px; }
   .booking-body { grid-template-columns: minmax(0, 1fr); }.advisor-column { border-right: 0; border-bottom: 1px solid #edf0ec; }.booking-column { padding: 17px 14px; }.advisor-list { grid-template-columns: repeat(2, minmax(0,1fr)); }.advisor-option { min-height: 55px; gap: 6px; padding: 6px; }.advisor-photo { width: 31px; height: 31px; font-size: 10px; }.advisor-meta strong { font-size: 8px; }.advisor-meta span { font-size: 7px; }
   .time-column { min-height: 335px; }.date-option { height: 47px; }.time-slots { gap: 6px; }.time-slot { min-height: 32px; }
-  .side-column { grid-template-columns: 1fr; }.next-appointment { min-height: 158px; }.appointment-empty { min-height: 100px; }.tip-card { min-height: 165px; }.quote-card { display: none; }.page-footer { gap: 12px; flex-wrap: wrap; }.page-footer > span:last-child { gap: 12px; }
+  .side-column { grid-template-columns: 1fr; }.next-appointment { min-height: 158px; }.appointment-empty { min-height: 100px; }.tip-card { min-height: 165px; }.page-footer { gap: 12px; flex-wrap: wrap; }.page-footer > span:last-child { gap: 12px; }
 }
 @media (max-width: 380px) {
   .content-wrap { padding-left: 10px; padding-right: 10px; }.booking-column { padding-left: 10px; padding-right: 10px; }.card-title-row h3 { font-size: 11px; }.card-title-row p { font-size: 8px; }.filter-button { padding: 5px; font-size: 7px; }.advisor-option { gap: 5px; }.advisor-photo { width: 28px; height: 28px; }.advisor-meta strong { font-size: 7px; }.advisor-meta span { font-size: 6px; }
@@ -326,7 +327,7 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 .tip-card { background: #f1eeee; }
 .tip-top, .tip-icon { color: #74131b; }
 .tip-card p { color: #70686a; }
-.tip-card a { color: #74131b; }
+.tip-card-link { color: #74131b; }
 .tip-decoration { color: #e8d9da; }
 .dialog-field input:focus, .dialog-field select:focus, .dialog-field textarea:focus { border-color: #9c454c; box-shadow: 0 0 0 3px #f7ebec; }
 .confirm-icon { background: #f7ebec; color: #74131b; }
@@ -334,14 +335,13 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 
 /* Improve legibility across compact labels, details, and secondary copy. */
 body { font-size: 15px; }
-.campus-details strong, .campus-details span, .help-card p, .help-card a,
+.campus-details strong, .campus-details span, .help-card p, .help-card-link,
 .profile-name strong, .profile-name small, .breadcrumb, .user-chip,
 .welcome-copy, .text-button, .hero-copy p, .hero-link,
 .card-title-row p, .advisor-meta strong, .advisor-meta span,
 .time-slot, .selection-summary, .continue-button,
 .appointment-info strong, .appointment-info span, .cancel-appointment-button,
-.tip-card p, .tip-card a, .quote-card p, .quote-author strong,
-.quote-author small, .page-footer, .dialog-intro, .dialog-field label,
+.tip-card p, .tip-card-link, .page-footer, .dialog-intro, .dialog-field label,
 .dialog-field input, .dialog-field select, .dialog-field textarea,
 .dialog-submit, .dialog-secondary, .dialog-cancel, .appointment-list-info strong,
 .appointment-list-info span, .appointment-notes { font-size: 11px; }
@@ -349,13 +349,13 @@ body { font-size: 15px; }
 .nav-label, .section-kicker, .availability-label, .eyebrow,
 .hero-kicker, .tip-top, .secure-note { font-size: 10px; }
 .eyebrow { font-size: 11px; }
-.hero-copy p, .welcome-copy, .tip-card p, .quote-card p, .dialog-intro { font-size: 12px; }
-.hero-link, .text-button, .help-card a, .page-footer { font-size: 11px; }
+.hero-copy p, .welcome-copy, .tip-card p, .dialog-intro { font-size: 12px; }
+.hero-link, .text-button, .help-card-link, .page-footer { font-size: 11px; }
 .card-title-row h3, .aside-heading h3, .tip-card h3 { font-size: 14px; }
 .filter-button { font-size: 10px; }
 .progress-step { font-size: 10px; }
 .date-option span, .timezone, .appointment-date span, .dialog-eyebrow,
-.appointment-type, .tip-card a, .quote-author small { font-size: 10px; }
+.appointment-type, .tip-card-link { font-size: 10px; }
 .date-option strong { font-size: 13px; }
 .appointment-empty { font-size: 11px; }
 .appointment-date { width: 40px; min-height: 44px; }
@@ -551,7 +551,7 @@ body { font-size: 15px; }
 .nav-item.active .nav-icon, .secure-note span { color: var(--theme-primary); }
 .nav-pill { color: var(--theme-ink); background: var(--theme-soft); }
 .help-icon { background: var(--theme-pale); color: var(--theme-primary); }
-.text-button, .help-card a, .aside-heading a, .tip-card a { color: var(--theme-ink); }
+.text-button, .help-card a, .aside-heading a, .tip-card-link { color: var(--theme-ink); }
 .hero-kicker { color: var(--theme-banner-accent); }
 .sparkle, .hero-copy h2 em, .login-decoration > span, .login-decoration i { color: var(--theme-highlight); }
 .mini-line, .art-card-lines b { background: var(--theme-mid); }

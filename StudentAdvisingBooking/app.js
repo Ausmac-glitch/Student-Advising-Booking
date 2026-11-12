@@ -501,6 +501,78 @@ function renderAppointments() {
   target.innerHTML = `<div class="appointment-item"><div class="appointment-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString("en-US", { month: "short" })}</span></div><div class="appointment-info"><strong>${advisor ? advisor.name : "Student advisor"}</strong><span>${date.toLocaleDateString("en-US", { weekday: "long" })} · ${appointment.time}</span><span class="appointment-type">${appointment.format || "Video call"}</span>${notesMarkup}<button class="cancel-appointment-button" type="button" data-cancel-id="${appointmentId}">Cancel session</button></div></div>`;
 }
 
+function openFaqDialog() {
+  const faqItems = [
+    {
+      question: "How do I book an advising appointment?",
+      answer: "Pick an advisor, choose a date and time that is still open, and finish the details form to confirm your session.",
+    },
+    {
+      question: "What if I need to cancel or reschedule?",
+      answer: "Open My appointments from the dashboard and use the cancel option for the session you want to update.",
+    },
+    {
+      question: "What should I bring to my session?",
+      answer: "A few ideas or questions you want help with is enough. Your advisor can guide you through the next steps after that.",
+    },
+    {
+      question: "How much time do advising sessions take?",
+      answer: "Most appointments are 30 minutes, and your advisor will make the most of that time to help with planning and next steps.",
+    },
+  ];
+
+  const faqMarkup = faqItems.map((faq) => `
+    <div class="faq-item">
+      <h3>${faq.question}</h3>
+      <p>${faq.answer}</p>
+    </div>
+  `).join("");
+
+  dialogContent.innerHTML = `
+    <div class="dialog-eyebrow">STUDENT FAQ</div>
+    <h2>Common advising questions</h2>
+    <p class="dialog-intro">Quick answers for the most common scheduling and advising questions.</p>
+    <div class="faq-list">${faqMarkup}</div>
+    <button class="dialog-secondary" type="button" data-close-dialog>Done</button>`;
+  dialog.showModal();
+}
+
+function openResourcesDialog() {
+  const resources = [
+    {
+      title: "Academic planning",
+      description: "Review your degree requirements, course sequence, and prerequisites. Bring a list of classes you’re considering so your advisor can help you plan your next term.",
+    },
+    {
+      title: "Transfer credits",
+      description: "If you’ve taken classes elsewhere, gather your transcripts and course details. Your advisor can help you identify what needs to be evaluated for transfer.",
+    },
+    {
+      title: "Career and internships",
+      description: "Think about the roles or fields you’re exploring. Bring a resume draft or questions about internships, interview preparation, and career experience.",
+    },
+    {
+      title: "Financial aid questions",
+      description: "Make a note of aid, scholarship, or deadline questions you want to discuss. Keep account numbers and other sensitive information private.",
+    },
+  ];
+
+  const resourceMarkup = resources.map((resource) => `
+    <div class="faq-item">
+      <h3>${resource.title}</h3>
+      <p>${resource.description}</p>
+    </div>
+  `).join("");
+
+  dialogContent.innerHTML = `
+    <div class="dialog-eyebrow">STUDENT RESOURCES</div>
+    <h2>Get ready for your next step</h2>
+    <p class="dialog-intro">Use these quick guides to prepare for a conversation with your advisor.</p>
+    <div class="faq-list">${resourceMarkup}</div>
+    <button class="dialog-secondary" type="button" data-close-dialog>Done</button>`;
+  dialog.showModal();
+}
+
 function openAppointmentsDialog() {
   const upcoming = readAppointments()
     .filter((item) => appointmentDateTime(item) >= new Date())
@@ -741,6 +813,21 @@ document.querySelector("#browseAdvisors").addEventListener("click", () => {
 document.querySelector("#viewAll").addEventListener("click", (event) => {
   event.preventDefault();
   openAppointmentsDialog();
+});
+
+document.querySelector("#helpCard").addEventListener("click", (event) => {
+  const faqButton = event.target.closest("[data-open-faqs]");
+  if (!faqButton) return;
+  event.preventDefault();
+  openFaqDialog();
+});
+
+const studentResourcesCard = document.querySelector("#resources");
+studentResourcesCard.addEventListener("click", openResourcesDialog);
+studentResourcesCard.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  openResourcesDialog();
 });
 
 dialogContent.addEventListener("click", (event) => {

@@ -75,10 +75,10 @@
 
         <div class="sidebar-bottom">
           <div class="help-card" id="helpCard">
-            <div class="help-icon">✳</div>
+            <div class="help-icon">?</div>
             <strong>Need a little help?</strong>
-            <p>Our student success team is always happy to point you in the right direction.</p>
-            <a href="mailto:success@polk.edu">Contact support <span>↗</span></a>
+            <p>Quick answers for the most common advising questions about scheduling, cancellations, and getting ready for a session.</p>
+            <button class="help-card-link" type="button" data-open-faqs>View advising FAQs <span>↗</span></button>
           </div>
           <button class="profile-button" type="button" aria-label="Signed in as Austin Rich">
             <div class="profile-avatar">AR</div>
@@ -164,14 +164,17 @@
                 <div class="aside-heading"><h3>Your next session</h3><a href="#appointments" id="viewAll">View all <span>→</span></a></div>
                 <div id="nextAppointmentContent"></div>
               </section>
-              <section class="tip-card" id="resources">
-                <div class="tip-top"><span class="tip-icon">✧</span><span>STUDENT TIP</span><span class="tip-dots">···</span></div>
-                <h3>A little prep goes a long way.</h3>
-                <p>Jot down a couple of questions before your session. Your advisor can help you make the most of every minute.</p>
-                <a href="#resources">Explore our student resources <span>↗</span></a>
+              <section class="tip-card" id="resources" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Open student resources" data-open-resources>
+                <div class="tip-top"><span class="tip-icon">✧</span><span>STUDENT RESOURCES</span><span class="tip-dots">···</span></div>
+                <h3>Helpful resources before your next advising session.</h3>
+                <ul class="resource-list">
+                  <li><strong>Degree plan:</strong> Review your required classes and academic milestones.</li>
+                  <li><strong>Transfer credits:</strong> Check which courses may still need approval.</li>
+                  <li><strong>Career support:</strong> Explore internship and job prep resources before you meet.</li>
+                </ul>
+                <span class="tip-card-link">Explore advising resources <span>↗</span></span>
                 <div class="tip-decoration">✳</div>
               </section>
-              <div class="quote-card"><span class="quote-mark">“</span><p>I left my session with a plan, not just more questions. It made all the difference.</p><div class="quote-author"><span class="quote-avatar">J</span><span><strong>Jamie R.</strong><small>Psychology, Class of ’26</small></span></div></div>
             </aside>
           </section>
 
