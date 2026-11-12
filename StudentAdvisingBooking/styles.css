@@ -211,7 +211,7 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 .page-footer { display: flex; justify-content: space-between; color: #a0a7a2; font-size: 8px; padding: 22px 1px 0; }
 .page-footer > span:last-child { display: flex; gap: 17px; }.page-footer a:hover { color: #547b60; }
 
-.booking-dialog { width: min(440px, calc(100vw - 30px)); border: 0; border-radius: 14px; padding: 0; box-shadow: 0 24px 80px #173a2b38; color: var(--ink); }
+.booking-dialog { width: min(440px, calc(100vw - 30px)); max-height: calc(100vh - 32px); overflow-y: auto; border: 0; border-radius: 14px; padding: 0; box-shadow: 0 24px 80px #173a2b38; color: var(--ink); }
 .booking-dialog::backdrop { background: #1b2c2580; backdrop-filter: blur(3px); }
 .dialog-close-form { position: absolute; right: 12px; top: 12px; z-index: 2; }
 .dialog-close { width: 29px; height: 29px; border: 0; border-radius: 50%; color: #77827a; background: #f2f4f1; font-size: 21px; cursor: pointer; line-height: 1; }

@@ -249,6 +249,19 @@ function renderCalendar() {
   renderSlots();
 }
 
+function slotHasExpired(dateString, timeString, now = new Date()) {
+  const date = new Date(`${dateString}T12:00:00`);
+  const match = timeString.match(/^(\d{1,2}):(\d{2}) (AM|PM)$/i);
+  if (!match) return false;
+
+  let hours = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hours += 12;
+
+  const slotDateTime = new Date(date);
+  slotDateTime.setHours(hours, Number(match[2]), 0, 0);
+  return slotDateTime <= now;
+}
+
 function renderSlots() {
   if (!state.date) {
     timeSlots.innerHTML = "";
@@ -259,24 +272,34 @@ function renderSlots() {
   const selectedDate = new Date(`${state.date}T12:00:00`);
   const index = (selectedDate.getDay() + 6) % 7;
   const advisorId = state.advisor || advisors[0].id;
+  const noSlots = document.querySelector("#noSlots");
+
   if ((state.timeOff[advisorId] || []).includes(state.date)) {
     state.time = null;
     timeSlots.innerHTML = "";
-    document.querySelector("#noSlots").textContent = "This advisor is unavailable on this date. Please choose another day.";
-    document.querySelector("#noSlots").classList.remove("hidden");
+    noSlots.textContent = "This advisor is unavailable on this date. Please choose another day.";
+    noSlots.classList.remove("hidden");
     updateSummary();
     return;
   }
+
   const slots = slotsByDay[index] || [];
   const availableTimes = new Set(state.availability[advisorId]?.[index] || []);
+  const now = new Date();
+  const sameDay = selectedDate.toDateString() === now.toDateString();
+
   if (state.time && !availableTimes.has(state.time)) state.time = null;
-  timeSlots.innerHTML = slots.map((time, slotIndex) => {
+  if (state.time && sameDay && slotHasExpired(state.date, state.time, now)) state.time = null;
+
+  timeSlots.innerHTML = slots.map((time) => {
     const unavailable = !availableTimes.has(time);
     const selected = state.time === time;
-    return `<button class="time-slot${selected ? " selected" : ""}" type="button" data-time="${time}" aria-pressed="${selected}" ${unavailable ? "disabled" : ""}>${time}</button>`;
+    const disabled = unavailable || (sameDay && slotHasExpired(state.date, time, now));
+    return `<button class="time-slot${selected ? " selected" : ""}" type="button" data-time="${time}" aria-pressed="${selected}" ${disabled ? "disabled" : ""}>${time}</button>`;
   }).join("");
-  document.querySelector("#noSlots").textContent = "No times available for this day. Try another date.";
-  document.querySelector("#noSlots").classList.toggle("hidden", slots.some((time) => availableTimes.has(time)));
+
+  noSlots.textContent = "No times available for this day. Try another date.";
+  noSlots.classList.toggle("hidden", slots.some((time) => availableTimes.has(time) && !(sameDay && slotHasExpired(state.date, time, now))));
   updateSummary();
 }
 
@@ -530,11 +553,12 @@ function openFaqDialog() {
 
   dialogContent.innerHTML = `
     <div class="dialog-eyebrow">STUDENT FAQ</div>
-    <h2>Common advising questions</h2>
+    <h2 tabindex="-1">Common advising questions</h2>
     <p class="dialog-intro">Quick answers for the most common scheduling and advising questions.</p>
     <div class="faq-list">${faqMarkup}</div>
     <button class="dialog-secondary" type="button" data-close-dialog>Done</button>`;
-  dialog.showModal();
+  if (!dialog.open) dialog.showModal();
+  dialogContent.querySelector("h2").focus();
 }
 
 function openResourcesDialog() {
@@ -566,11 +590,13 @@ function openResourcesDialog() {
 
   dialogContent.innerHTML = `
     <div class="dialog-eyebrow">STUDENT RESOURCES</div>
-    <h2>Get ready for your next step</h2>
+    <h2 tabindex="-1">Get ready for your next step</h2>
     <p class="dialog-intro">Use these quick guides to prepare for a conversation with your advisor.</p>
     <div class="faq-list">${resourceMarkup}</div>
+    <button class="dialog-secondary" type="button" data-open-faqs aria-haspopup="dialog">View advising FAQs</button>
     <button class="dialog-secondary" type="button" data-close-dialog>Done</button>`;
-  dialog.showModal();
+  if (!dialog.open) dialog.showModal();
+  dialogContent.querySelector("h2").focus();
 }
 
 function openAppointmentsDialog() {
@@ -831,6 +857,12 @@ studentResourcesCard.addEventListener("keydown", (event) => {
 });
 
 dialogContent.addEventListener("click", (event) => {
+  const faqButton = event.target.closest("[data-open-faqs]");
+  if (faqButton) {
+    openFaqDialog();
+    return;
+  }
+
   const themeButton = event.target.closest("[data-select-theme]");
   if (themeButton) {
     saveTheme(themeButton.dataset.selectTheme);
@@ -917,7 +949,13 @@ document.querySelector(".main-nav").addEventListener("click", (event) => {
   } else if (navItem.dataset.nav === "advisor") {
     event.preventDefault();
     if (state.advisorMode) renderAdvisorDashboard();
-  } else if (navItem.dataset.nav === "dashboard" || navItem.dataset.nav === "booking" || navItem.dataset.nav === "resources") {
+  } else if (navItem.dataset.nav === "resources") {
+    event.preventDefault();
+    showDashboardView("student");
+    navItem.classList.add("active");
+    navItem.setAttribute("aria-current", "page");
+    openResourcesDialog();
+  } else if (navItem.dataset.nav === "dashboard" || navItem.dataset.nav === "booking") {
     showDashboardView("student");
     navItem.classList.add("active");
     navItem.setAttribute("aria-current", "page");
@@ -1056,6 +1094,16 @@ function initialize() {
   renderAdvisors();
   renderCalendar();
   renderAppointments();
+
+  const refreshTodaySlots = () => {
+    if (!state.date) return;
+    const selectedDate = new Date(`${state.date}T12:00:00`);
+    if (selectedDate.toDateString() === new Date().toDateString()) renderSlots();
+  };
+  window.setInterval(refreshTodaySlots, 15_000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshTodaySlots();
+  });
 }
 
 initialize();
