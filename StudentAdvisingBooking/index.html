@@ -29,6 +29,7 @@
             <select id="loginRole" name="role" required>
               <option value="student">Student</option>
               <option value="advisor">Advisor</option>
+              <option value="admin">Administrator</option>
             </select>
           </div>
           <div class="dialog-field hidden" id="loginAdvisorField">
@@ -47,7 +48,7 @@
           <p class="login-error hidden" id="loginError" role="alert"></p>
           <button class="login-submit" type="submit">Continue <span>→</span></button>
         </form>
-        <p class="login-demo-note"><strong>Demo access:</strong> Student password <code>1234</code> · Advisor password <code>12345</code></p>
+        <p class="login-demo-note"><strong>Demo access:</strong> Student password <code>1234</code> · Advisor password <code>12345</code> · Administrator code <code>123456</code></p>
         <p class="login-security-note">Demo sign-in only. Do not use real or sensitive information.</p>
       </section>
       <div class="login-decoration" aria-hidden="true"><span>✳</span><strong>Your next chapter<br />starts here.</strong><i>✦</i></div>
@@ -108,6 +109,11 @@
               <p class="welcome-copy">A little guidance can go a long way. What would you like to work on?</p>
             </div>
             <button class="text-button" type="button" id="browseAdvisors">Meet your advisors <span>→</span></button>
+          </section>
+
+          <section class="student-cancellation-notice hidden" id="studentCancellationNotice" aria-labelledby="studentCancellationHeading" role="status" aria-live="polite">
+            <h2 id="studentCancellationHeading">Appointment update</h2>
+            <div class="student-cancellation-list" id="studentCancellationList"></div>
           </section>
 
           <section class="hero-banner" aria-label="Advising introduction">
@@ -217,6 +223,35 @@
               <div><span class="section-kicker">YOUR CALENDAR</span><h2>Upcoming appointments</h2><p>Sessions booked with you are listed below.</p></div>
             </div>
             <div id="advisorAppointments"></div>
+          </section>
+        </section>
+        <section class="content-wrap admin-dashboard hidden" id="adminDashboard">
+          <div class="advisor-dashboard-heading">
+            <div>
+              <p class="eyebrow">ADMINISTRATOR PORTAL</p>
+              <h1>Welcome, <span id="adminWelcomeName">Administrator</span></h1>
+              <p class="welcome-copy">Review advisor schedules and student meetings, and generate meeting totals.</p>
+            </div>
+          </div>
+          <div class="demo-security-note"><strong>Demo mode:</strong> schedule and meeting data are stored in this browser. This access code is not secure for real student data.</div>
+          <section class="advisor-management-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">ADVISOR AVAILABILITY</span><h2>Working days and times</h2><p>Recurring times are shown by weekday; specific days off are listed below each advisor.</p></div>
+            </div>
+            <div class="admin-advisor-grid" id="adminAdvisorSchedules"></div>
+          </section>
+          <section class="advisor-management-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">BOOKED MEETINGS</span><h2>Student appointments</h2><p>Upcoming and past appointments currently saved in this browser.</p></div>
+            </div>
+            <div id="adminAppointments"></div>
+          </section>
+          <section class="advisor-management-card">
+            <div class="advisor-management-heading">
+              <div><span class="section-kicker">MEETING TOTALS</span><h2>Advisor meeting report</h2><p>Count completed meetings for each advisor in the current calendar periods.</p></div>
+              <button class="dialog-submit save-availability-button" type="button" id="generateAdminReport">Generate report</button>
+            </div>
+            <div class="hidden" id="adminReport" aria-live="polite"></div>
           </section>
         </section>
       </main>

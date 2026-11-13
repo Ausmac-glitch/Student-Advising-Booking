@@ -183,6 +183,15 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 .appointment-empty { min-height: 111px; display: grid; place-items: center; text-align: center; color: #9aa39e; font-size: 9px; line-height: 1.6; }
 .empty-calendar { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: #eef4ec; color: #6b8a6c; font-size: 18px; margin: 0 auto 8px; }
 .appointment-item { display: flex; gap: 10px; border-radius: 7px; background: #f7f8f6; padding: 10px 8px; }
+.student-cancellation-notice { border: 1px solid #eadbdd; border-left: 4px solid #851923; border-radius: 8px; background: #fcf7f7; padding: 16px; margin: 0 0 22px; }
+.student-cancellation-notice h2 { font: 700 16px "Manrope", sans-serif; margin: 0 0 12px; color: #5f1016; }
+.student-cancellation-list { display: grid; gap: 9px; }
+.student-cancellation-item { display: grid; gap: 5px; background: white; border: 1px solid #f0e5e6; border-radius: 6px; padding: 11px 12px; }
+.student-cancellation-item strong { color: #4a3335; font-size: 12px; }
+.student-cancellation-item span { color: #68716b; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.student-cancellation-item small { color: #8a8a8a; font-size: 10px; }
+.student-cancellation-dismiss { justify-self: start; border: 1px solid #eadbdd; border-radius: 5px; background: white; color: #74131b; padding: 6px 10px; font-size: 10px; font-weight: 700; cursor: pointer; }
+.student-cancellation-dismiss:hover { background: #f7ebec; }
 .appointment-date { flex: none; width: 36px; height: 41px; border-radius: 6px; background: white; display: grid; align-content: center; justify-items: center; color: #53785d; }
 .appointment-date strong { font: 700 14px "Manrope", sans-serif; line-height: 1; }.appointment-date span { font-size: 7px; text-transform: uppercase; margin-top: 3px; }
 .appointment-info { display: grid; align-content: center; gap: 3px; min-width: 0; flex: 1; }
@@ -426,8 +435,32 @@ body { font-size: 15px; }
 .advisor-appointment-info > strong { font-size: 13px; }
 .advisor-appointment-info > span { color: #68716b; font-size: 11px; overflow-wrap: anywhere; }
 .advisor-appointment-info .appointment-notes { font-size: 12px; }
+.advisor-cancel-appointment { flex: none; align-self: flex-start; margin-left: auto; border: 1px solid #eadbdd; border-radius: 6px; padding: 7px 9px; font-size: 10px; white-space: nowrap; }
 .advisor-empty { justify-content: start; text-align: left; }
 .demo-login-hint { color: #77696a; background: #fcf7f7; border-radius: 6px; padding: 9px 10px; font-size: 11px; margin: 0 0 13px; }
+
+.admin-advisor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.admin-advisor-card { min-width: 0; border: 1px solid #e9ece8; border-radius: 8px; padding: 14px; }
+.admin-advisor-card h3 { font: 700 14px "Manrope", sans-serif; margin: 0; }
+.admin-advisor-role { color: #777; font-size: 11px; margin: 4px 0 12px; }
+.admin-advisor-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.admin-advisor-day { display: grid; align-content: start; gap: 5px; background: #f8f8f7; border-radius: 6px; padding: 9px; }
+.admin-advisor-day > strong { font-size: 11px; }
+.admin-advisor-day > span, .admin-time-off { color: #68716b; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-advisor-day b, .admin-time-off b { color: #343434; }
+.admin-time-off { margin: 11px 0 0; }
+.admin-meeting-list { display: grid; gap: 8px; }
+.admin-meeting-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr) minmax(180px, 1.5fr) minmax(90px, .7fr); gap: 12px; align-items: center; border: 1px solid #ededeb; border-radius: 7px; padding: 11px; }
+.admin-meeting-row strong { font-size: 12px; overflow-wrap: anywhere; }
+.admin-meeting-row span { color: #68716b; font-size: 11px; }
+.admin-report-section + .admin-report-section { margin-top: 24px; }
+.admin-report-section h3 { font: 700 14px "Manrope", sans-serif; margin: 0 0 5px; }
+.admin-report-note { color: #68716b; font-size: 11px; margin: 0 0 10px; }
+.admin-report-table-wrap { overflow-x: auto; }
+.admin-report-table { width: 100%; border-collapse: collapse; text-align: left; }
+.admin-report-table th, .admin-report-table td { border-bottom: 1px solid #ededeb; padding: 11px 12px; font-size: 12px; white-space: nowrap; }
+.admin-report-table thead th { color: #68716b; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.admin-report-table tbody th { font-weight: 600; }
 
 @media (max-width: 680px) {
   .advisor-dashboard-heading, .advisor-management-heading { align-items: flex-start; flex-direction: column; }
@@ -438,6 +471,10 @@ body { font-size: 15px; }
   .time-off-form { align-items: stretch; flex-direction: column; }
   .time-off-form .dialog-cancel { width: 100%; }
   .time-off-item { align-items: flex-start; flex-direction: column; }
+  .admin-advisor-grid, .admin-advisor-days { grid-template-columns: minmax(0, 1fr); }
+  .admin-meeting-row { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .advisor-appointment-item { flex-wrap: wrap; }
+  .advisor-cancel-appointment { margin-left: 48px; }
 }
 
 .login-screen { min-height: 100vh; display: grid; grid-template-columns: minmax(420px, 1fr) minmax(320px, .85fr); background: #fff; }

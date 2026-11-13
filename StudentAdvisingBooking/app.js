@@ -32,6 +32,7 @@ const state = {
   bookingComplete: false,
   authRole: null,
   advisorMode: false,
+  adminMode: false,
   managedAdvisor: null,
   availability: createDefaultAvailability(),
   timeOff: createDefaultTimeOff(),
@@ -58,6 +59,7 @@ function currentUserThemeKey() {
   if (state.authRole === "advisor" && state.managedAdvisor) {
     return `advisr-theme:advisor:${state.managedAdvisor}`;
   }
+  if (state.authRole === "admin") return "advisr-theme:admin";
   if (state.authRole === "student") return "advisr-theme:student:austin-rich";
   return null;
 }
@@ -202,24 +204,57 @@ function escapeHTML(value) {
 }
 
 function appointmentDateTime(appointment) {
+  if (!appointment || typeof appointment.date !== "string" || typeof appointment.time !== "string") {
+    return new Date(NaN);
+  }
+
   const date = new Date(`${appointment.date}T12:00:00`);
-  const match = appointment.time.match(/^(\d{1,2}):(\d{2}) (AM|PM)$/);
+  if (Number.isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+
+  const match = appointment.time.match(/^(\d{1,2}):(\d{2}) (AM|PM)$/i);
   if (!match) return new Date(NaN);
+
   let hours = Number(match[1]) % 12;
-  if (match[3] === "PM") hours += 12;
+  if (match[3].toUpperCase() === "PM") hours += 12;
   date.setHours(hours, Number(match[2]), 0, 0);
   return date;
 }
 
-function readAppointments() {
+function normalizeAdvisorId(advisorId) {
+  return String(advisorId ?? "").trim();
+}
+
+function readAppointmentRecords() {
   try {
     const saved = JSON.parse(localStorage.getItem("advisr-appointments") || "[]");
     if (!Array.isArray(saved)) throw new Error("Saved appointments have an invalid format.");
-    return saved.filter((item) => item && typeof item.date === "string" && typeof item.time === "string" && typeof item.advisorId === "string");
+    return saved
+      .filter((item) => item && typeof item.date === "string" && typeof item.time === "string" && typeof item.advisorId === "string")
+      .map((item) => ({ ...item, advisorId: normalizeAdvisorId(item.advisorId) }));
   } catch (error) {
     console.error("Could not read saved appointments.", error);
     return [];
   }
+}
+
+function readAppointments() {
+  return readAppointmentRecords().filter((item) => item.status !== "cancelled");
+}
+
+function readCanceledAppointments() {
+  return readAppointmentRecords().filter((item) => item.status === "cancelled"
+    && isValidDateKey(item.date)
+    && typeof item.cancelledAt === "string"
+    && !Number.isNaN(new Date(item.cancelledAt).getTime()));
+}
+
+function getUpcomingAppointments() {
+  return readAppointments()
+    .filter((item) => !Number.isNaN(appointmentDateTime(item).getTime()))
+    .filter((item) => appointmentDateTime(item) >= new Date())
+    .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
 }
 
 function renderAdvisors() {
@@ -426,9 +461,9 @@ function removeAdvisorTimeOff(date) {
 }
 
 function renderAdvisorAppointments(advisorId) {
-  const upcoming = readAppointments()
-    .filter((appointment) => appointment.advisorId === advisorId && appointmentDateTime(appointment) >= new Date())
-    .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
+  const targetAdvisorId = normalizeAdvisorId(advisorId);
+  const upcoming = getUpcomingAppointments()
+    .filter((appointment) => normalizeAdvisorId(appointment.advisorId) === targetAdvisorId);
   const target = document.querySelector("#advisorAppointments");
   if (upcoming.length === 0) {
     target.innerHTML = `<div class="appointment-empty advisor-empty">No upcoming appointments are booked with you.</div>`;
@@ -437,6 +472,7 @@ function renderAdvisorAppointments(advisorId) {
   target.innerHTML = `<div class="advisor-appointment-list">${upcoming.map((appointment) => {
     const date = new Date(`${appointment.date}T12:00:00`);
     const notes = typeof appointment.notes === "string" ? appointment.notes.trim() : "";
+    const appointmentId = appointment.id || appointment.createdAt;
     return `<article class="advisor-appointment-item">
       <div class="appointment-date"><strong>${date.getDate()}</strong><span>${date.toLocaleDateString("en-US", { month: "short" })}</span></div>
       <div class="advisor-appointment-info">
@@ -445,30 +481,174 @@ function renderAdvisorAppointments(advisorId) {
         <span>${escapeHTML(appointment.email || "")} · ${escapeHTML(appointment.format || "Video call")}</span>
         ${notes ? `<p class="appointment-notes"><strong>Student note:</strong> ${escapeHTML(notes)}</p>` : ""}
       </div>
+      <button class="cancel-appointment-button advisor-cancel-appointment" type="button" data-advisor-cancel-id="${escapeHTML(appointmentId)}">Cancel meeting</button>
     </article>`;
   }).join("")}</div>`;
 }
 
+function renderStudentCancellationNotices() {
+  const notice = document.querySelector("#studentCancellationNotice");
+  const target = document.querySelector("#studentCancellationList");
+  const cancellations = readCanceledAppointments()
+    .filter((appointment) => appointment.cancelledBy === "advisor"
+      && !appointment.studentDismissedAt
+      && typeof appointment.cancellationReason === "string"
+      && appointment.cancellationReason.trim())
+    .sort((a, b) => new Date(b.cancelledAt) - new Date(a.cancelledAt));
+
+  if (cancellations.length === 0) {
+    notice.classList.add("hidden");
+    target.innerHTML = "";
+    return;
+  }
+
+  notice.classList.remove("hidden");
+  target.innerHTML = cancellations.map((appointment) => {
+    const advisor = advisors.find((item) => item.id === normalizeAdvisorId(appointment.advisorId));
+    const meetingDate = new Date(`${appointment.date}T12:00:00`);
+    const canceledDate = new Date(appointment.cancelledAt);
+    return `<article class="student-cancellation-item">
+      <strong>${escapeHTML(advisor ? advisor.name : "Your advisor")} canceled your meeting</strong>
+      <span>Scheduled for ${meetingDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} · ${escapeHTML(appointment.time)}</span>
+      <span>Reason: ${escapeHTML(appointment.cancellationReason.trim())}</span>
+      <small>Notice from ${canceledDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</small>
+      <button class="student-cancellation-dismiss" type="button" data-dismiss-cancellation-id="${escapeHTML(appointment.id || appointment.createdAt || "")}">Dismiss</button>
+    </article>`;
+  }).join("");
+}
+
+function dismissStudentCancellation(id) {
+  const appointments = readAppointmentRecords();
+  let found = false;
+  const studentDismissedAt = new Date().toISOString();
+  const updatedAppointments = appointments.map((item) => {
+    if ((item.id || item.createdAt) !== id || item.status !== "cancelled" || item.cancelledBy !== "advisor") return item;
+    found = true;
+    return { ...item, studentDismissedAt };
+  });
+  if (!found) {
+    showToast("That cancellation notice could not be found. Refresh the page and try again.");
+    renderStudentCancellationNotices();
+    return;
+  }
+
+  try {
+    localStorage.setItem("advisr-appointments", JSON.stringify(updatedAppointments));
+  } catch (error) {
+    console.error("Could not dismiss the cancellation notice.", error);
+    showToast("The notice could not be dismissed. Check this browser’s storage settings and try again.");
+    return;
+  }
+  renderStudentCancellationNotices();
+}
+
+function renderAdminDashboard() {
+  const scheduleTarget = document.querySelector("#adminAdvisorSchedules");
+  scheduleTarget.innerHTML = advisors.map((advisor) => {
+    const schedule = state.availability[advisor.id];
+    const timeOff = [...(state.timeOff[advisor.id] || [])].sort();
+    return `<article class="admin-advisor-card">
+      <h3>${escapeHTML(advisor.name)}</h3>
+      <p class="admin-advisor-role">${escapeHTML(advisor.role)}</p>
+      <div class="admin-advisor-days">${weekdays.map((weekday, dayIndex) => {
+        const workingTimes = schedule[dayIndex];
+        const nonWorkingTimes = slotsByDay[dayIndex].filter((time) => !workingTimes.includes(time));
+        return `<div class="admin-advisor-day">
+          <strong>${weekday}</strong>
+          <span><b>Working:</b> ${workingTimes.length ? workingTimes.map(escapeHTML).join(", ") : "Not working"}</span>
+          <span><b>Not working:</b> ${nonWorkingTimes.length ? nonWorkingTimes.map(escapeHTML).join(", ") : "All listed times"}</span>
+        </div>`;
+      }).join("")}</div>
+      <p class="admin-time-off"><b>Dates off:</b> ${timeOff.length
+        ? timeOff.map((dateKeyValue) => new Date(`${dateKeyValue}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })).map(escapeHTML).join(", ")
+        : "None recorded"}</p>
+    </article>`;
+  }).join("");
+
+  const appointments = readAppointments()
+    .filter((appointment) => advisors.some((advisor) => advisor.id === normalizeAdvisorId(appointment.advisorId)))
+    .filter((appointment) => !Number.isNaN(appointmentDateTime(appointment).getTime()))
+    .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
+  const appointmentsTarget = document.querySelector("#adminAppointments");
+  appointmentsTarget.innerHTML = appointments.length
+    ? `<div class="admin-meeting-list">${appointments.map((appointment) => {
+      const date = new Date(`${appointment.date}T12:00:00`);
+      const advisor = advisors.find((item) => item.id === normalizeAdvisorId(appointment.advisorId));
+      return `<article class="admin-meeting-row">
+        <strong>${escapeHTML(appointment.name || "Student")}</strong>
+        <span>${escapeHTML(advisor.name)}</span>
+        <span>${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} · ${escapeHTML(appointment.time)}</span>
+        <span>${escapeHTML(appointment.format || "Video call")}</span>
+      </article>`;
+    }).join("")}</div>`
+    : `<div class="appointment-empty advisor-empty">No advisor meetings have been booked.</div>`;
+}
+
+function generateAdminReport() {
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const weekStartKey = dateKey(startOfWeek(now));
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const yearPrefix = String(now.getFullYear());
+  const completedAppointments = readAppointments().filter((appointment) => {
+    const appointmentTime = appointmentDateTime(appointment);
+    return isValidDateKey(appointment.date)
+      && !Number.isNaN(appointmentTime.getTime())
+      && appointmentTime <= now;
+  });
+  const canceledAppointments = readCanceledAppointments().filter((appointment) => new Date(appointment.cancelledAt) <= now);
+  const countFor = (appointments, advisorId, matchesPeriod, dateForAppointment = (appointment) => appointment.date) => appointments.filter((appointment) =>
+    normalizeAdvisorId(appointment.advisorId) === advisorId && matchesPeriod(dateForAppointment(appointment))).length;
+  const periods = [
+    { label: "Today", matches: (date) => date === todayKey },
+    { label: "This week", matches: (date) => date >= weekStartKey && date <= todayKey },
+    { label: "This month", matches: (date) => date.startsWith(monthPrefix) },
+    { label: "This year", matches: (date) => date.startsWith(yearPrefix) },
+  ];
+  const target = document.querySelector("#adminReport");
+  target.innerHTML = `<section class="admin-report-section">
+      <h3>Completed meetings</h3>
+      <p class="admin-report-note">Meetings completed in the current calendar periods.</p>
+      <div class="admin-report-table-wrap"><table class="admin-report-table">
+        <thead><tr><th>Advisor</th>${periods.map((period) => `<th>${period.label}</th>`).join("")}</tr></thead>
+        <tbody>${advisors.map((advisor) => `<tr><th scope="row">${escapeHTML(advisor.name)}</th>${periods.map((period) => `<td>${countFor(completedAppointments, advisor.id, period.matches)}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></div>
+    </section>
+    <section class="admin-report-section">
+      <h3>Canceled meetings</h3>
+      <p class="admin-report-note">Cancellations grouped by the date they were recorded. Cancellations made before tracking was added cannot be included.</p>
+      <div class="admin-report-table-wrap"><table class="admin-report-table">
+        <thead><tr><th>Advisor</th>${periods.map((period) => `<th>${period.label}</th>`).join("")}</tr></thead>
+        <tbody>${advisors.map((advisor) => `<tr><th scope="row">${escapeHTML(advisor.name)}</th>${periods.map((period) => `<td>${countFor(canceledAppointments, advisor.id, period.matches, (appointment) => dateKey(new Date(appointment.cancelledAt)))}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></div>
+    </section>`;
+  target.classList.remove("hidden");
+}
+
 function showDashboardView(view) {
   state.advisorMode = view === "advisor";
-  document.querySelector("#studentDashboard").classList.toggle("hidden", state.advisorMode);
+  state.adminMode = view === "admin";
+  document.querySelector("#studentDashboard").classList.toggle("hidden", state.advisorMode || state.adminMode);
   document.querySelector("#advisorDashboard").classList.toggle("hidden", !state.advisorMode);
-  document.querySelector("#helpCard").classList.toggle("hidden", state.advisorMode);
-  document.querySelector("#pageTitle").textContent = state.advisorMode ? "Advisor portal" : "Student dashboard";
+  document.querySelector("#adminDashboard").classList.toggle("hidden", !state.adminMode);
+  document.querySelector("#helpCard").classList.toggle("hidden", state.advisorMode || state.adminMode);
+  document.querySelector("#pageTitle").textContent = state.advisorMode ? "Advisor portal" : state.adminMode ? "Administrator dashboard" : "Student dashboard";
   const advisor = advisors.find((item) => item.id === state.managedAdvisor);
-  const displayName = state.advisorMode && advisor ? advisor.name : "Austin Rich";
+  const displayName = state.advisorMode && advisor ? advisor.name : state.adminMode ? "Administrator" : "Austin Rich";
   document.querySelector("#headerUserName").textContent = displayName;
-  document.querySelector("#headerAvatar").textContent = state.advisorMode && advisor ? advisor.initials : "AR";
+  document.querySelector("#headerAvatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : "AR";
   document.querySelector(".profile-button .profile-name strong").textContent = displayName;
-  document.querySelector(".profile-button .profile-name small").textContent = state.advisorMode ? "Advisor" : "Class of 2027";
-  document.querySelector(".profile-button .profile-avatar").textContent = state.advisorMode && advisor ? advisor.initials : "AR";
+  document.querySelector(".profile-button .profile-name small").textContent = state.advisorMode ? "Advisor" : state.adminMode ? "Administrator" : "Class of 2027";
+  document.querySelector(".profile-button .profile-avatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : "AR";
   document.querySelector(".profile-button").setAttribute("aria-label", `Sign out ${displayName}`);
-  document.querySelector("#portalLabel").textContent = state.advisorMode ? "Advisor portal" : "Student portal";
+  document.querySelector("#portalLabel").textContent = state.advisorMode ? "Advisor portal" : state.adminMode ? "Administrator portal" : "Student portal";
   document.querySelectorAll(".main-nav .nav-item").forEach((item) => {
     const active = item.dataset.nav === (state.advisorMode ? "advisor" : "dashboard");
     const visible = state.authRole === "advisor"
       ? item.dataset.nav === "advisor"
-      : item.dataset.nav !== "advisor";
+      : state.authRole === "admin"
+        ? item.dataset.nav === "dashboard"
+        : item.dataset.nav !== "advisor";
     item.classList.toggle("hidden", !visible);
     item.classList.toggle("active", active);
     if (active) item.setAttribute("aria-current", "page");
@@ -500,16 +680,13 @@ function saveAdvisorAvailability() {
     return;
   }
   state.availability = updatedAvailability;
-  state.availability = updatedAvailability;
   document.querySelector("#availabilityStatus").textContent = "Availability saved. Students can now book these times.";
   document.querySelector("#availabilityStatus").classList.remove("error");
   renderSlots();
 }
 
 function renderAppointments() {
-  const upcoming = readAppointments()
-    .filter((item) => appointmentDateTime(item) >= new Date())
-    .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
+  const upcoming = getUpcomingAppointments();
   const target = document.querySelector("#nextAppointmentContent");
   const appointment = upcoming[0];
   if (!appointment) {
@@ -600,9 +777,7 @@ function openResourcesDialog() {
 }
 
 function openAppointmentsDialog() {
-  const upcoming = readAppointments()
-    .filter((item) => appointmentDateTime(item) >= new Date())
-    .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
+  const upcoming = getUpcomingAppointments();
   const list = upcoming.map((appointment) => {
     const advisor = advisors.find((item) => item.id === appointment.advisorId);
     const date = new Date(`${appointment.date}T12:00:00`);
@@ -639,20 +814,63 @@ function openCancelConfirmation(id) {
   dialog.showModal();
 }
 
-function createEmailDraft(email, subject, body) {
-  if (!email) return null;
-  const params = new URLSearchParams({
-    subject,
-    body,
-  });
-  return `mailto:${encodeURIComponent(email)}?${params.toString()}`;
+function openAdvisorCancelConfirmation(id) {
+  const appointment = readAppointments().find((item) => (item.id || item.createdAt) === id
+    && normalizeAdvisorId(item.advisorId) === state.managedAdvisor);
+  if (!appointment) {
+    showToast("That meeting could not be found. Refresh your schedule and try again.");
+    renderAdvisorAppointments(state.managedAdvisor);
+    return;
+  }
+  const advisor = advisors.find((item) => item.id === appointment.advisorId);
+  const date = new Date(`${appointment.date}T12:00:00`);
+  dialogContent.innerHTML = `
+    <div class="dialog-eyebrow">CANCEL MEETING</div>
+    <h2>Cancel this advising meeting?</h2>
+    <p class="dialog-intro">The student will be able to see the cancellation reason when they sign in.</p>
+    <div class="confirmation-detail"><span><strong>${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong> · ${escapeHTML(appointment.time)}</span><span>${escapeHTML(advisor ? advisor.name : "Advisor")} · ${escapeHTML(appointment.format || "Video call")}</span></div>
+    <form id="advisorCancelForm" data-appointment-id="${escapeHTML(id)}">
+      <div class="dialog-field"><label for="advisorCancellationReason">Reason for canceling</label><textarea id="advisorCancellationReason" name="reason" maxlength="500" required placeholder="Let the student know why this meeting needs to be canceled."></textarea></div>
+      <p class="dialog-error hidden" id="advisorCancelError" role="alert"></p>
+      <div class="dialog-actions"><button class="dialog-secondary" type="button" data-close-dialog>Keep meeting</button><button class="dialog-cancel" type="submit">Cancel meeting</button></div>
+    </form>`;
+  dialogContent.querySelector("#advisorCancelForm").addEventListener("submit", confirmAdvisorAppointmentCancellation);
+  dialog.showModal();
 }
 
-function sendEmailDraft(email, subject, body) {
-  const mailtoLink = createEmailDraft(email, subject, body);
-  if (!mailtoLink) return false;
-  window.location.href = mailtoLink;
-  return true;
+async function sendNotificationEmail(email, subject, text) {
+  if (!email) return;
+
+  try {
+    const response = await fetch("/api/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ to: email, subject, text }),
+    });
+
+    const outcome = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(outcome.message || "Email delivery failed.");
+    }
+  } catch (error) {
+    console.error("Could not send email notification.", error);
+    showToast("Your email notification could not be sent. Please check the SMTP setup.");
+  }
+}
+
+function recordAppointmentCancellation(id, cancelledBy, cancellationReason = "") {
+  const appointments = readAppointmentRecords();
+  let found = false;
+  const cancelledAt = new Date().toISOString();
+  const updatedAppointments = appointments.map((item) => {
+    if ((item.id || item.createdAt) !== id || item.status === "cancelled") return item;
+    found = true;
+    return { ...item, status: "cancelled", cancelledAt, cancelledBy, cancellationReason };
+  });
+  if (!found) throw new Error("The selected appointment no longer exists.");
+  localStorage.setItem("advisr-appointments", JSON.stringify(updatedAppointments));
 }
 
 async function confirmAppointmentCancellation(id) {
@@ -669,12 +887,7 @@ async function confirmAppointmentCancellation(id) {
   }
 
   try {
-    const appointments = readAppointments();
-    const remaining = appointments.filter((item) => (item.id || item.createdAt) !== id);
-    if (remaining.length === appointments.length) {
-      throw new Error("The selected appointment no longer exists.");
-    }
-    localStorage.setItem("advisr-appointments", JSON.stringify(remaining));
+    recordAppointmentCancellation(id, "student");
   } catch (error) {
     console.error("Could not cancel the appointment.", error);
     const message = dialogContent.querySelector("#cancelError");
@@ -686,6 +899,13 @@ async function confirmAppointmentCancellation(id) {
     }
     return;
   }
+
+  const advisor = advisors.find((item) => item.id === appointment.advisorId);
+  const date = new Date(`${appointment.date}T12:00:00`);
+  const emailSubject = `Meeting canceled with ${advisor ? advisor.name : "Advisor"}`;
+  const emailBody = `Meeting with ${advisor ? advisor.name : "Advisor"} at ${appointment.time} on ${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} has been canceled.`;
+  await sendNotificationEmail(appointment.email, emailSubject, emailBody);
+
   renderAppointments();
   dialogContent.innerHTML = `
     <div class="confirm-icon">✓</div>
@@ -694,6 +914,45 @@ async function confirmAppointmentCancellation(id) {
     <p class="dialog-intro">The appointment has been removed from your upcoming sessions.</p>
     <button class="dialog-submit" type="button" data-close-dialog>Done</button>`;
   showToast("Your advising session has been canceled.");
+}
+
+function confirmAdvisorAppointmentCancellation(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const id = form.dataset.appointmentId;
+  const reason = String(new FormData(form).get("reason") || "").trim();
+  const errorMessage = form.querySelector("#advisorCancelError");
+  if (!reason) {
+    errorMessage.textContent = "Enter a reason so the student knows why the meeting was canceled.";
+    errorMessage.classList.remove("hidden");
+    form.querySelector("#advisorCancellationReason").focus();
+    return;
+  }
+
+  const appointment = readAppointments().find((item) => (item.id || item.createdAt) === id
+    && normalizeAdvisorId(item.advisorId) === state.managedAdvisor);
+  if (!appointment) {
+    errorMessage.textContent = "That meeting could not be found. Refresh your schedule and try again.";
+    errorMessage.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    recordAppointmentCancellation(id, "advisor", reason);
+  } catch (error) {
+    console.error("Could not cancel the advisor meeting.", error);
+    errorMessage.textContent = "The meeting could not be canceled. Check this browser’s storage settings and try again.";
+    errorMessage.classList.remove("hidden");
+    return;
+  }
+
+  renderAdvisorAppointments(state.managedAdvisor);
+  dialogContent.innerHTML = `
+    <div class="confirm-icon">✓</div>
+    <div class="dialog-eyebrow">MEETING CANCELED</div>
+    <h2>Cancellation recorded.</h2>
+    <p class="dialog-intro">Your reason will appear on the student dashboard the next time they sign in.</p>
+    <button class="dialog-submit" type="button" data-close-dialog>Done</button>`;
 }
 
 function openDetailsDialog() {
@@ -725,7 +984,7 @@ async function saveAppointment(event) {
   const data = new FormData(form);
   const appointment = {
     id: crypto.randomUUID(),
-    advisorId: state.advisor,
+    advisorId: normalizeAdvisorId(state.advisor),
     date: state.date,
     time: state.time,
     name: String(data.get("name")).trim(),
@@ -735,7 +994,7 @@ async function saveAppointment(event) {
     createdAt: new Date().toISOString(),
   };
   try {
-    const appointments = readAppointments();
+    const appointments = readAppointmentRecords();
     appointments.push(appointment);
     localStorage.setItem("advisr-appointments", JSON.stringify(appointments));
   } catch (error) {
@@ -749,6 +1008,12 @@ async function saveAppointment(event) {
   renderAppointments();
   const advisor = advisors.find((item) => item.id === state.advisor);
   const date = new Date(`${state.date}T12:00:00`);
+  const emailSubject = `Appointment confirmed: ${advisor ? advisor.name : "Advisor"} at ${appointment.time}`;
+  const studentName = appointment.name || "Student";
+  const advisorName = advisor ? advisor.name : "Advisor";
+  const meetingFormat = appointment.format || "Video call";
+  const emailBody = `Student name: ${studentName}\nAdvisor name: ${advisorName}\nTime: ${appointment.time}\nDate: ${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}\nMeeting type: ${meetingFormat}\n\nYour advising meeting is confirmed.`;
+  await sendNotificationEmail(appointment.email, emailSubject, emailBody);
   dialogContent.innerHTML = `
     <div class="confirm-icon">✓</div>
     <div class="dialog-eyebrow">YOU’RE ALL SET</div>
@@ -862,7 +1127,6 @@ dialogContent.addEventListener("click", (event) => {
     openFaqDialog();
     return;
   }
-
   const themeButton = event.target.closest("[data-select-theme]");
   if (themeButton) {
     saveTheme(themeButton.dataset.selectTheme);
@@ -884,6 +1148,16 @@ dialogContent.addEventListener("click", (event) => {
 document.querySelector("#nextAppointmentContent").addEventListener("click", (event) => {
   const cancelButton = event.target.closest("[data-cancel-id]");
   if (cancelButton) openCancelConfirmation(cancelButton.dataset.cancelId);
+});
+
+document.querySelector("#advisorAppointments").addEventListener("click", (event) => {
+  const cancelButton = event.target.closest("[data-advisor-cancel-id]");
+  if (cancelButton) openAdvisorCancelConfirmation(cancelButton.dataset.advisorCancelId);
+});
+
+document.querySelector("#studentCancellationList").addEventListener("click", (event) => {
+  const dismissButton = event.target.closest("[data-dismiss-cancellation-id]");
+  if (dismissButton) dismissStudentCancellation(dismissButton.dataset.dismissCancellationId);
 });
 
 document.querySelector("#saveAvailability").addEventListener("click", saveAdvisorAvailability);
@@ -931,7 +1205,8 @@ document.querySelector(".main-nav").addEventListener("click", (event) => {
   const navItem = event.target.closest(".nav-item");
   if (!navItem) return;
 
-  if (state.authRole === "advisor" && navItem.dataset.nav !== "advisor") {
+  if ((state.authRole === "advisor" && navItem.dataset.nav !== "advisor")
+    || (state.authRole === "admin" && navItem.dataset.nav !== "dashboard")) {
     event.preventDefault();
     return;
   }
@@ -956,7 +1231,7 @@ document.querySelector(".main-nav").addEventListener("click", (event) => {
     navItem.setAttribute("aria-current", "page");
     openResourcesDialog();
   } else if (navItem.dataset.nav === "dashboard" || navItem.dataset.nav === "booking") {
-    showDashboardView("student");
+    showDashboardView(state.authRole === "admin" ? "admin" : "student");
     navItem.classList.add("active");
     navItem.setAttribute("aria-current", "page");
   }
@@ -969,6 +1244,8 @@ document.querySelector("#loginRole").addEventListener("change", (event) => {
   advisorField.classList.toggle("hidden", !advisorSelected);
   advisorSelect.required = advisorSelected;
 });
+
+document.querySelector("#generateAdminReport").addEventListener("click", generateAdminReport);
 
 document.querySelector("#loginForm").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -983,7 +1260,7 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
   const data = new FormData(event.currentTarget);
   const role = String(data.get("role"));
   const password = String(data.get("password"));
-  const expectedPassword = role === "advisor" ? "12345" : "1234";
+  const expectedPassword = role === "advisor" ? "12345" : role === "admin" ? "123456" : "1234";
   const error = document.querySelector("#loginError");
 
   if (password !== expectedPassword) {
@@ -1002,8 +1279,13 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
   state.bookingComplete = false;
   document.querySelector("#loginScreen").classList.add("hidden");
   document.querySelector("#appShell").classList.remove("hidden");
+  if (role === "student") renderStudentCancellationNotices();
   if (role === "advisor") renderAdvisorDashboard();
-  showDashboardView(role === "advisor" ? "advisor" : "student");
+  if (role === "admin") {
+    renderAdminDashboard();
+    document.querySelector("#adminReport").classList.add("hidden");
+  }
+  showDashboardView(role === "advisor" ? "advisor" : role === "admin" ? "admin" : "student");
   error.textContent = "";
   error.classList.add("hidden");
 });
@@ -1012,6 +1294,7 @@ function signOut() {
   if (dialog.open) dialog.close();
   state.authRole = null;
   state.advisorMode = false;
+  state.adminMode = false;
   state.managedAdvisor = null;
   state.advisor = null;
   state.time = null;

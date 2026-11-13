@@ -1,36 +1,52 @@
-# Advisr — Student Advising Booking
+# Advisr
 
-A responsive student advising booking website. Choose an advisor and appointment time, add your details, and confirm a session. Bookings are saved in the current browser using local storage.
+A demo student-advising booking app.
 
 ## Demo sign-in
 
-- Student password: `1234`
-- Advisor password: `12345`
+| Role | Password / code |
+| --- | --- |
+| Student | `1234` |
+| Advisor | `12345` |
+| Administrator | `123456` |
 
-Select an advisor profile when signing in as an advisor. These passwords are client-side demo gates only; do not use this static app for sensitive data or production authentication.
+Choose an advisor profile when signing in as an advisor.
 
-Advisor sign-ins are limited to the advisor dashboard. Advisors can manage weekly time slots and mark specific calendar dates as time off; those dates are removed from student booking availability.
+## Features
 
-Use the **Appearance** button in the header to choose a Burgundy, Ocean, Forest, or Violet theme. Each student or advisor profile has its own saved theme in the current browser, so one user’s choice does not affect another’s.
+- Students can book, view, and cancel advising meetings.
+- Advisors can manage weekly availability and time off, review meetings, and cancel upcoming meetings with a reason.
+- Students see advisor cancellation reasons on their next sign-in and can dismiss the notices.
+- Administrators can view advisor schedules and appointments, and report completed and canceled meetings by day, week, month, and year.
+- Student resources, FAQs, and appearance themes are available in the dashboard.
 
 ## Run locally
 
-Open `index.html` in a browser, or start a static server from this directory:
+From `StudentAdvisingBooking/`, install dependencies and start the Node server:
 
 ```sh
-python3 -m http.server 8000
+npm ci
+npm start
 ```
 
-Then visit `http://localhost:8000`.
+Open [http://localhost:3000/?access=advisr-private-link-2026](http://localhost:3000/?access=advisr-private-link-2026). The `access` query parameter is required to enable sign-in.
 
-The project is static HTML, CSS, and JavaScript and does not require a build step or package installation.
+## Email notifications
 
-## Azure Static Web Apps
+Email delivery requires SMTP settings in a `.env` file:
 
-The Azure build script copies the static site files into `dist/`:
-
-```sh
-npm run build:azure
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+EMAIL_FROM=advising@example.com
 ```
 
-In the Static Web Apps deployment workflow, set `app_location` to `/` and `output_location` to `dist`. The site remains a client-side app, so bookings and preferences continue to be stored in each visitor's browser.
+`SMTP_PASS` is required by the server. `EMAIL_FROM` is optional and defaults to `SMTP_USER`.
+
+## Demo limitations
+
+Bookings, schedules, cancellations, dismissal choices, and themes are saved in the current browser and are not shared across browsers or devices. Sign-in codes and the access link are client-side demo gates, not secure authentication. Do not use real or sensitive student information.
+
+The GitHub Pages workflow serves the static app. Email delivery requires the Node server and is not available from the static Pages deployment.
