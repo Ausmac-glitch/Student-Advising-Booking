@@ -31,6 +31,7 @@ const state = {
   detailsInProgress: false,
   bookingComplete: false,
   authRole: null,
+  studentName: "",
   advisorMode: false,
   adminMode: false,
   managedAdvisor: null,
@@ -60,7 +61,11 @@ function currentUserThemeKey() {
     return `advisr-theme:advisor:${state.managedAdvisor}`;
   }
   if (state.authRole === "admin") return "advisr-theme:admin";
-  if (state.authRole === "student") return "advisr-theme:student:austin-rich";
+  if (state.authRole === "student") {
+    return currentStudentKey() === "austin rich"
+      ? "advisr-theme:student:austin-rich"
+      : `advisr-theme:student:${encodeURIComponent(currentStudentKey())}`;
+  }
   return null;
 }
 
@@ -226,6 +231,21 @@ function normalizeAdvisorId(advisorId) {
   return String(advisorId ?? "").trim();
 }
 
+function normalizeStudentKey(name) {
+  return String(name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function currentStudentKey() {
+  return normalizeStudentKey(state.studentName);
+}
+
+function appointmentBelongsToCurrentStudent(appointment) {
+  const studentKey = typeof appointment.studentKey === "string" && appointment.studentKey.trim()
+    ? normalizeStudentKey(appointment.studentKey)
+    : normalizeStudentKey(appointment.name);
+  return Boolean(currentStudentKey()) && studentKey === currentStudentKey();
+}
+
 function readAppointmentRecords() {
   try {
     const saved = JSON.parse(localStorage.getItem("advisr-appointments") || "[]");
@@ -243,6 +263,10 @@ function readAppointments() {
   return readAppointmentRecords().filter((item) => item.status !== "cancelled");
 }
 
+function readStudentAppointments() {
+  return readAppointments().filter(appointmentBelongsToCurrentStudent);
+}
+
 function readCanceledAppointments() {
   return readAppointmentRecords().filter((item) => item.status === "cancelled"
     && isValidDateKey(item.date)
@@ -250,8 +274,8 @@ function readCanceledAppointments() {
     && !Number.isNaN(new Date(item.cancelledAt).getTime()));
 }
 
-function getUpcomingAppointments() {
-  return readAppointments()
+function getUpcomingAppointments(appointments = readAppointments()) {
+  return appointments
     .filter((item) => !Number.isNaN(appointmentDateTime(item).getTime()))
     .filter((item) => appointmentDateTime(item) >= new Date())
     .sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
@@ -490,7 +514,8 @@ function renderStudentCancellationNotices() {
   const notice = document.querySelector("#studentCancellationNotice");
   const target = document.querySelector("#studentCancellationList");
   const cancellations = readCanceledAppointments()
-    .filter((appointment) => appointment.cancelledBy === "advisor"
+    .filter((appointment) => appointmentBelongsToCurrentStudent(appointment)
+      && appointment.cancelledBy === "advisor"
       && !appointment.studentDismissedAt
       && typeof appointment.cancellationReason === "string"
       && appointment.cancellationReason.trim())
@@ -522,7 +547,8 @@ function dismissStudentCancellation(id) {
   let found = false;
   const studentDismissedAt = new Date().toISOString();
   const updatedAppointments = appointments.map((item) => {
-    if ((item.id || item.createdAt) !== id || item.status !== "cancelled" || item.cancelledBy !== "advisor") return item;
+    if ((item.id || item.createdAt) !== id || item.status !== "cancelled" || item.cancelledBy !== "advisor"
+      || !appointmentBelongsToCurrentStudent(item)) return item;
     found = true;
     return { ...item, studentDismissedAt };
   });
@@ -590,12 +616,12 @@ function generateAdminReport() {
   const weekStartKey = dateKey(startOfWeek(now));
   const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const yearPrefix = String(now.getFullYear());
-  const completedAppointments = readAppointments().filter((appointment) => {
+  const bookedAppointments = readAppointments().filter((appointment) => {
     const appointmentTime = appointmentDateTime(appointment);
     return isValidDateKey(appointment.date)
-      && !Number.isNaN(appointmentTime.getTime())
-      && appointmentTime <= now;
+      && !Number.isNaN(appointmentTime.getTime());
   });
+  const completedAppointments = bookedAppointments.filter((appointment) => appointmentDateTime(appointment) <= now);
   const canceledAppointments = readCanceledAppointments().filter((appointment) => new Date(appointment.cancelledAt) <= now);
   const countFor = (appointments, advisorId, matchesPeriod, dateForAppointment = (appointment) => appointment.date) => appointments.filter((appointment) =>
     normalizeAdvisorId(appointment.advisorId) === advisorId && matchesPeriod(dateForAppointment(appointment))).length;
@@ -607,8 +633,16 @@ function generateAdminReport() {
   ];
   const target = document.querySelector("#adminReport");
   target.innerHTML = `<section class="admin-report-section">
+      <h3>Booked meetings</h3>
+      <p class="admin-report-note">Non-canceled meetings scheduled in the current calendar periods.</p>
+      <div class="admin-report-table-wrap"><table class="admin-report-table">
+        <thead><tr><th>Advisor</th>${periods.map((period) => `<th>${period.label}</th>`).join("")}</tr></thead>
+        <tbody>${advisors.map((advisor) => `<tr><th scope="row">${escapeHTML(advisor.name)}</th>${periods.map((period) => `<td>${countFor(bookedAppointments, advisor.id, period.matches)}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table></div>
+    </section>
+    <section class="admin-report-section">
       <h3>Completed meetings</h3>
-      <p class="admin-report-note">Meetings completed in the current calendar periods.</p>
+      <p class="admin-report-note">Non-canceled meetings whose scheduled time has passed.</p>
       <div class="admin-report-table-wrap"><table class="admin-report-table">
         <thead><tr><th>Advisor</th>${periods.map((period) => `<th>${period.label}</th>`).join("")}</tr></thead>
         <tbody>${advisors.map((advisor) => `<tr><th scope="row">${escapeHTML(advisor.name)}</th>${periods.map((period) => `<td>${countFor(completedAppointments, advisor.id, period.matches)}</td>`).join("")}</tr>`).join("")}</tbody>
@@ -634,13 +668,15 @@ function showDashboardView(view) {
   document.querySelector("#helpCard").classList.toggle("hidden", state.advisorMode || state.adminMode);
   document.querySelector("#pageTitle").textContent = state.advisorMode ? "Advisor portal" : state.adminMode ? "Administrator dashboard" : "Student dashboard";
   const advisor = advisors.find((item) => item.id === state.managedAdvisor);
-  const displayName = state.advisorMode && advisor ? advisor.name : state.adminMode ? "Administrator" : "Austin Rich";
+  const displayName = state.advisorMode && advisor ? advisor.name : state.adminMode ? "Administrator" : state.studentName || "Student";
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   document.querySelector("#headerUserName").textContent = displayName;
-  document.querySelector("#headerAvatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : "AR";
+  document.querySelector("#headerAvatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : initials;
   document.querySelector(".profile-button .profile-name strong").textContent = displayName;
-  document.querySelector(".profile-button .profile-name small").textContent = state.advisorMode ? "Advisor" : state.adminMode ? "Administrator" : "Class of 2027";
-  document.querySelector(".profile-button .profile-avatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : "AR";
+  document.querySelector(".profile-button .profile-name small").textContent = state.advisorMode ? "Advisor" : state.adminMode ? "Administrator" : "Student";
+  document.querySelector(".profile-button .profile-avatar").textContent = state.advisorMode && advisor ? advisor.initials : state.adminMode ? "AD" : initials;
   document.querySelector(".profile-button").setAttribute("aria-label", `Sign out ${displayName}`);
+  document.querySelector("#studentWelcomeName").textContent = state.studentName.split(/\s+/)[0] || "Student";
   document.querySelector("#portalLabel").textContent = state.advisorMode ? "Advisor portal" : state.adminMode ? "Administrator portal" : "Student portal";
   document.querySelectorAll(".main-nav .nav-item").forEach((item) => {
     const active = item.dataset.nav === (state.advisorMode ? "advisor" : "dashboard");
@@ -686,7 +722,7 @@ function saveAdvisorAvailability() {
 }
 
 function renderAppointments() {
-  const upcoming = getUpcomingAppointments();
+  const upcoming = getUpcomingAppointments(readStudentAppointments());
   const target = document.querySelector("#nextAppointmentContent");
   const appointment = upcoming[0];
   if (!appointment) {
@@ -777,7 +813,7 @@ function openResourcesDialog() {
 }
 
 function openAppointmentsDialog() {
-  const upcoming = getUpcomingAppointments();
+  const upcoming = getUpcomingAppointments(readStudentAppointments());
   const list = upcoming.map((appointment) => {
     const advisor = advisors.find((item) => item.id === appointment.advisorId);
     const date = new Date(`${appointment.date}T12:00:00`);
@@ -796,7 +832,7 @@ function openAppointmentsDialog() {
 }
 
 function openCancelConfirmation(id) {
-  const appointment = readAppointments().find((item) => (item.id || item.createdAt) === id);
+  const appointment = readStudentAppointments().find((item) => (item.id || item.createdAt) === id);
   if (!appointment) {
     showToast("That session could not be found. Refresh your appointments and try again.");
     renderAppointments();
@@ -874,7 +910,7 @@ function recordAppointmentCancellation(id, cancelledBy, cancellationReason = "")
 }
 
 async function confirmAppointmentCancellation(id) {
-  const appointment = readAppointments().find((item) => (item.id || item.createdAt) === id);
+  const appointment = readStudentAppointments().find((item) => (item.id || item.createdAt) === id);
   if (!appointment) {
     const message = dialogContent.querySelector("#cancelError");
     if (message) {
@@ -965,8 +1001,8 @@ function openDetailsDialog() {
     <h2>Let’s get you ready.</h2>
     <p class="dialog-intro">Confirm your details and ${advisor.name} will be ready to meet with you.</p>
     <form id="bookingForm">
-      <div class="dialog-field"><label for="studentName">Your name</label><input id="studentName" name="name" autocomplete="name" value="Austin Rich" required minlength="2" /></div>
-      <div class="dialog-field"><label for="studentEmail">College email</label><input id="studentEmail" name="email" type="email" autocomplete="email" value="austin.rich@polk.edu" required /></div>
+      <div class="dialog-field"><label for="studentName">Your name</label><input id="studentName" name="name" autocomplete="name" value="${escapeHTML(state.studentName)}" required minlength="2" /></div>
+      <div class="dialog-field"><label for="studentEmail">College email</label><input id="studentEmail" name="email" type="email" autocomplete="email" required /></div>
       <div class="dialog-field"><label for="meetingFormat">How would you like to meet?</label><select id="meetingFormat" name="format"><option>Video call</option><option>In person</option></select></div>
       <div class="dialog-field"><label for="sessionNotes">What would you like to discuss? <span>(optional)</span></label><textarea id="sessionNotes" name="notes" placeholder="Share a little context so your advisor can prepare..."></textarea></div>
       <div class="confirmation-detail"><span><strong>${date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong> · ${state.time}</span><span>${advisor.name} · 30-minute session</span></div>
@@ -984,6 +1020,7 @@ async function saveAppointment(event) {
   const data = new FormData(form);
   const appointment = {
     id: crypto.randomUUID(),
+    studentKey: currentStudentKey(),
     advisorId: normalizeAdvisorId(state.advisor),
     date: state.date,
     time: state.time,
@@ -1237,12 +1274,30 @@ document.querySelector(".main-nav").addEventListener("click", (event) => {
   }
 });
 
-document.querySelector("#loginRole").addEventListener("change", (event) => {
-  const advisorSelected = event.currentTarget.value === "advisor";
+function setLoginRole(role) {
+  document.querySelector("#loginRole").value = role;
+  document.querySelectorAll("[data-login-role]").forEach((button) => {
+    const selected = button.dataset.loginRole === role;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+
+  const advisorSelected = role === "advisor";
+  const studentSelected = role === "student";
+  const studentNameField = document.querySelector("#loginStudentNameField");
+  const studentNameInput = document.querySelector("#loginStudentName");
+  studentNameField.classList.toggle("hidden", !studentSelected);
+  studentNameInput.required = studentSelected;
   const advisorField = document.querySelector("#loginAdvisorField");
   const advisorSelect = document.querySelector("#loginAdvisor");
   advisorField.classList.toggle("hidden", !advisorSelected);
   advisorSelect.required = advisorSelected;
+}
+
+document.querySelector(".login-role-options").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-login-role]");
+  if (!button) return;
+  setLoginRole(button.dataset.loginRole);
 });
 
 document.querySelector("#generateAdminReport").addEventListener("click", generateAdminReport);
@@ -1259,9 +1314,17 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
 
   const data = new FormData(event.currentTarget);
   const role = String(data.get("role"));
+  const studentName = role === "student" ? String(data.get("studentName") || "").trim() : "";
   const password = String(data.get("password"));
   const expectedPassword = role === "advisor" ? "12345" : role === "admin" ? "123456" : "1234";
   const error = document.querySelector("#loginError");
+
+  if (role === "student" && studentName.length < 2) {
+    error.textContent = "Please enter your name to sign in.";
+    error.classList.remove("hidden");
+    document.querySelector("#loginStudentName").focus();
+    return;
+  }
 
   if (password !== expectedPassword) {
     error.textContent = "That password isn’t correct. Please try again.";
@@ -1271,6 +1334,7 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
   }
 
   state.authRole = role;
+  state.studentName = studentName;
   state.managedAdvisor = role === "advisor" ? String(data.get("advisorId")) : null;
   loadUserTheme();
   state.advisor = null;
@@ -1279,7 +1343,10 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
   state.bookingComplete = false;
   document.querySelector("#loginScreen").classList.add("hidden");
   document.querySelector("#appShell").classList.remove("hidden");
-  if (role === "student") renderStudentCancellationNotices();
+  if (role === "student") {
+    renderStudentCancellationNotices();
+    renderAppointments();
+  }
   if (role === "advisor") renderAdvisorDashboard();
   if (role === "admin") {
     renderAdminDashboard();
@@ -1293,6 +1360,7 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
 function signOut() {
   if (dialog.open) dialog.close();
   state.authRole = null;
+  state.studentName = "";
   state.advisorMode = false;
   state.adminMode = false;
   state.managedAdvisor = null;
@@ -1304,13 +1372,12 @@ function signOut() {
   showDashboardView("student");
   document.querySelector("#appShell").classList.add("hidden");
   document.querySelector("#loginScreen").classList.remove("hidden");
-  document.querySelector("#loginRole").value = "student";
-  document.querySelector("#loginAdvisorField").classList.add("hidden");
-  document.querySelector("#loginAdvisor").required = false;
+  setLoginRole("student");
+  document.querySelector("#loginStudentName").value = "";
   document.querySelector("#loginPassword").value = "";
   document.querySelector("#loginError").textContent = "";
   document.querySelector("#loginError").classList.add("hidden");
-  document.querySelector("#loginRole").focus();
+  document.querySelector('[data-login-role="student"]').focus();
 }
 
 document.querySelectorAll("[data-sign-out]").forEach((button) => {

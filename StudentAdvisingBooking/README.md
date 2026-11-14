@@ -17,7 +17,7 @@ Choose an advisor profile when signing in as an advisor.
 - Students can book, view, and cancel advising meetings.
 - Advisors can manage weekly availability and time off, review meetings, and cancel upcoming meetings with a reason.
 - Students see advisor cancellation reasons on their next sign-in and can dismiss the notices.
-- Administrators can view advisor schedules and appointments, and report completed and canceled meetings by day, week, month, and year.
+- Administrators can view advisor schedules and appointments, and report booked, completed, and canceled meetings by day, week, month, and year.
 - Student resources, FAQs, and appearance themes are available in the dashboard.
 
 ## Run locally
@@ -47,6 +47,6 @@ EMAIL_FROM=advising@example.com
 
 ## Demo limitations
 
-Bookings, schedules, cancellations, dismissal choices, and themes are saved in the current browser and are not shared across browsers or devices. Sign-in codes and the access link are client-side demo gates, not secure authentication. Do not use real or sensitive student information.
+Bookings, schedules, cancellations, dismissal choices, and themes are saved in the current browser and are not shared across browsers or devices. Student appointments, cancellation notices, and themes are separated by the name entered at sign-in; names are not verified, so this is not secure authentication. Sign-in codes and the access link are also client-side demo gates. Do not use real or sensitive student information.
 
 The GitHub Pages workflow serves the static app. Email delivery requires the Node server and is not available from the static Pages deployment.

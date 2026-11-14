@@ -25,12 +25,17 @@
         </div>
         <form id="loginForm">
           <div class="dialog-field">
-            <label for="loginRole">I’m signing in as</label>
-            <select id="loginRole" name="role" required>
-              <option value="student">Student</option>
-              <option value="advisor">Advisor</option>
-              <option value="admin">Administrator</option>
-            </select>
+            <span class="login-role-label" id="loginRoleLabel">I’m signing in as</span>
+            <input id="loginRole" name="role" type="hidden" value="student" />
+            <div class="login-role-options" role="group" aria-labelledby="loginRoleLabel">
+              <button class="login-role-option selected" type="button" data-login-role="student" aria-pressed="true">Student</button>
+              <button class="login-role-option" type="button" data-login-role="advisor" aria-pressed="false">Advisor</button>
+              <button class="login-role-option" type="button" data-login-role="admin" aria-pressed="false">Administrator</button>
+            </div>
+          </div>
+          <div class="dialog-field" id="loginStudentNameField">
+            <label for="loginStudentName">Your name</label>
+            <input id="loginStudentName" name="studentName" type="text" autocomplete="name" minlength="2" required />
           </div>
           <div class="dialog-field hidden" id="loginAdvisorField">
             <label for="loginAdvisor">Advisor profile</label>
@@ -81,9 +86,9 @@
             <p>Quick answers for the most common advising questions about scheduling, cancellations, and getting ready for a session.</p>
             <button class="help-card-link" type="button" data-open-faqs aria-haspopup="dialog">View advising FAQs <span>↗</span></button>
           </div>
-          <button class="profile-button" type="button" aria-label="Signed in as Austin Rich">
-            <div class="profile-avatar">AR</div>
-            <span class="profile-name"><strong>Austin Rich</strong><small>Class of 2027</small></span>
+          <button class="profile-button" type="button" aria-label="Signed in as Student">
+            <div class="profile-avatar">S</div>
+            <span class="profile-name"><strong>Student</strong><small>Student</small></span>
             <span class="profile-more">···</span>
           </button>
           <button class="sidebar-signout" type="button" data-sign-out>Sign out <span>↗</span></button>
@@ -95,7 +100,7 @@
           <div class="breadcrumb">Polk State College <span>/</span> <strong id="pageTitle">Student dashboard</strong></div>
           <div class="topbar-actions">
             <div class="topbar-divider"></div>
-            <span class="user-chip"><span class="profile-avatar small" id="headerAvatar">AR</span><span id="headerUserName">Austin Rich</span></span>
+            <span class="user-chip"><span class="profile-avatar small" id="headerAvatar">S</span><span id="headerUserName">Student</span></span>
             <button class="appearance-button" type="button" id="openAppearance" aria-haspopup="dialog">◐ <span>Appearance</span></button>
             <button class="signout-button" type="button" data-sign-out>Sign out <span>↗</span></button>
           </div>
@@ -105,7 +110,7 @@
           <section class="welcome-row">
             <div>
               <p class="eyebrow"><span class="sun-icon">☼</span> <span id="todayLabel"></span></p>
-              <h1>Good afternoon, Austin <span class="wave">✦</span></h1>
+              <h1>Good afternoon, <span id="studentWelcomeName">Student</span> <span class="wave">✦</span></h1>
               <p class="welcome-copy">A little guidance can go a long way. What would you like to work on?</p>
             </div>
             <button class="text-button" type="button" id="browseAdvisors">Meet your advisors <span>→</span></button>
