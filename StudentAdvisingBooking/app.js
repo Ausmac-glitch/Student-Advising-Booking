@@ -1,10 +1,10 @@
 const PRIVATE_ACCESS_TOKEN = "advisr-private-link-2026";
 
 const advisors = [
-  { id: "chen", name: "Dr. Maya Chen", role: "Academic planning", initials: "MC", color: "linear-gradient(145deg,#bc846b,#775349)", topic: "Academics" },
-  { id: "brooks", name: "Jordan Brooks", role: "Career & internships", initials: "JB", color: "linear-gradient(145deg,#a87578,#654044)", topic: "Career" },
-  { id: "rivera", name: "Sofia Rivera", role: "Wellbeing & balance", initials: "SR", color: "linear-gradient(145deg,#bf9d6c,#7f6041)", topic: "Wellbeing" },
-  { id: "patel", name: "Samir Patel", role: "Financial aid", initials: "SP", color: "linear-gradient(145deg,#8797b0,#4f5c79)", topic: "Finances" },
+  { id: "chen", name: "Dr. Maya Chen", role: "Academic planning", initials: "MC", color: "linear-gradient(145deg,#bc846b,#775349)", topic: "Academics", bio: "Helps students map coursework, graduation goals, and academic strategies that keep them on track." },
+  { id: "brooks", name: "Jordan Brooks", role: "Career & internships", initials: "JB", color: "linear-gradient(145deg,#a87578,#654044)", topic: "Career", bio: "Supports career exploration, resumes, internships, and next steps after graduation." },
+  { id: "rivera", name: "Sofia Rivera", role: "Wellbeing & balance", initials: "SR", color: "linear-gradient(145deg,#bf9d6c,#7f6041)", topic: "Wellbeing", bio: "Helps students build healthy routines, manage stress, and access campus support resources." },
+  { id: "patel", name: "Samir Patel", role: "Financial aid", initials: "SP", color: "linear-gradient(145deg,#8797b0,#4f5c79)", topic: "Finances", bio: "Guides students through aid questions, affordability planning, and financial support options." },
 ];
 
 const slotsByDay = [
@@ -41,6 +41,7 @@ const state = {
   topic: "All topics",
 };
 const advisorList = document.querySelector("#advisorList");
+const studentAdvisorCards = document.querySelector("#studentAdvisorCards");
 const calendarWeek = document.querySelector("#calendarWeek");
 const timeSlots = document.querySelector("#timeSlots");
 const selectionSummary = document.querySelector("#selectionSummary");
@@ -289,6 +290,19 @@ function renderAdvisors() {
       <span class="advisor-meta"><strong>${advisor.name}</strong><span>${advisor.role}</span></span>
       <span class="advisor-selected-mark" aria-hidden="true">✓</span>
     </button>`).join("");
+}
+
+function renderStudentAdvisorCards() {
+  if (!studentAdvisorCards) return;
+  studentAdvisorCards.innerHTML = advisors.map((advisor) => `
+    <article class="student-advisor-card">
+      <span class="student-advisor-photo" style="background:${advisor.color}">${advisor.initials}</span>
+      <span class="student-advisor-copy">
+        <strong>${advisor.name}</strong>
+        <small>${advisor.role}</small>
+        <span class="student-advisor-bio">${advisor.bio}</span>
+      </span>
+    </article>`).join("");
 }
 
 function renderCalendar() {
@@ -1138,6 +1152,10 @@ document.querySelector("#browseAdvisors").addEventListener("click", () => {
   document.querySelector("#booking").scrollIntoView({ behavior: "smooth" });
 });
 
+document.querySelector("[data-scroll-booking]").addEventListener("click", () => {
+  document.querySelector("#booking").scrollIntoView({ behavior: "smooth" });
+});
+
 document.querySelector("#viewAll").addEventListener("click", (event) => {
   event.preventDefault();
   openAppointmentsDialog();
@@ -1344,6 +1362,7 @@ document.querySelector("#loginForm").addEventListener("submit", (event) => {
   document.querySelector("#loginScreen").classList.add("hidden");
   document.querySelector("#appShell").classList.remove("hidden");
   if (role === "student") {
+    renderStudentAdvisorCards();
     renderStudentCancellationNotices();
     renderAppointments();
   }
@@ -1441,6 +1460,7 @@ function initialize() {
   document.querySelector("#todayLabel").textContent = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).toUpperCase();
   const weekday = (today.getDay() + 6) % 7;
   state.date = dateKey(new Date(state.weekStart.getFullYear(), state.weekStart.getMonth(), state.weekStart.getDate() + weekday));
+  renderStudentAdvisorCards();
   renderAdvisors();
   renderCalendar();
   renderAppointments();

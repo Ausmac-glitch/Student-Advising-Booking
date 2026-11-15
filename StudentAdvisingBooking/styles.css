@@ -267,12 +267,15 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
   .campus-switcher { border: 0; margin: 29px 0 22px; padding: 0; }.campus-avatar { width: 36px; height: 36px; }
   .main-nav { width: 100%; }.nav-item { justify-content: center; padding: 0; }.nav-icon { font-size: 18px; }.nav-pill, .help-card, .profile-name, .profile-more { display: none; }.profile-button { justify-content: center; padding: 14px 0 0; }.main-content { margin-left: 68px; }
   .booking-layout { grid-template-columns: minmax(0, 1fr); }.side-column { grid-template-columns: repeat(3, 1fr); }.next-appointment, .tip-card { min-width: 0; }
+  .student-advisor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
   .sidebar { width: 54px; padding: 19px 7px 12px; }.brand-mark { width: 20px; height: 20px; }.campus-switcher { margin: 27px 0 19px; }.campus-avatar { width: 32px; height: 32px; }.main-content { margin-left: 54px; }
   .topbar { height: 54px; padding: 0 15px; }.breadcrumb { font-size: 9px; }.topbar-actions { gap: 10px; }.user-chip { font-size: 0; gap: 0; }.user-chip .chevron, .topbar-divider { display: none; }.user-chip .profile-avatar { font-size: 9px; }
   .content-wrap { padding: 22px 14px 18px; }.welcome-row { align-items: flex-start; margin-bottom: 17px; }.welcome-row h1 { font-size: 21px; }.welcome-copy { max-width: 290px; font-size: 11px; line-height: 1.5; }.text-button { display: none; }.eyebrow { font-size: 7px; }
   .hero-banner { height: 190px; margin-bottom: 22px; }.hero-copy { padding: 22px 19px; }.hero-copy h2 { font-size: 23px; }.hero-copy p { max-width: 260px; font-size: 9px; }.hero-art { right: -162px; opacity: .8; }.hero-index { right: 14px; bottom: 12px; }
+  .student-advisor-grid { grid-template-columns: minmax(0, 1fr); }
+  .student-advisor-card { gap: 10px; padding: 12px 10px; }
   .section-heading h2 { font-size: 16px; }.secure-note { font-size: 8px; }.booking-progress { height: 54px; padding: 0 11px; }.progress-step { gap: 4px; font-size: 0; }.progress-step > span { font-size: 9px; width: 20px; height: 20px; }.progress-step b { display: none; }.progress-line { margin: 0 8px; }
   .booking-body { grid-template-columns: minmax(0, 1fr); }.advisor-column { border-right: 0; border-bottom: 1px solid #edf0ec; }.booking-column { padding: 17px 14px; }.advisor-list { grid-template-columns: repeat(2, minmax(0,1fr)); }.advisor-option { min-height: 55px; gap: 6px; padding: 6px; }.advisor-photo { width: 31px; height: 31px; font-size: 10px; }.advisor-meta strong { font-size: 8px; }.advisor-meta span { font-size: 7px; }
   .time-column { min-height: 335px; }.date-option { height: 47px; }.time-slots { gap: 6px; }.time-slot { min-height: 32px; }
@@ -317,6 +320,15 @@ h1 { font: 700 25px "Manrope", sans-serif; letter-spacing: -.9px; margin-bottom:
 .progress-step.complete > span { border-color: #e7c7ca; background: #f7ebec; color: #74131b; }
 .progress-step.current > span { background: #851923; border-color: #851923; }
 .secure-note span, .nav-item.active .nav-icon { color: #851923; }
+.student-advisor-section { margin: 0 0 20px; }
+.section-heading-inline { align-items: end; margin-bottom: 12px; }
+.student-advisor-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.student-advisor-card { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 14px 14px; border: 1px solid #e8e8e8; border-radius: 12px; background: white; text-align: left; }
+.student-advisor-photo { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; color: white; font-size: 12px; font-weight: 700; }
+.student-advisor-copy { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.student-advisor-copy strong { font: 700 12px "Manrope", sans-serif; color: #1d1d1d; }
+.student-advisor-copy small { color: #6b736d; font-size: 10px; }
+.student-advisor-bio { color: #5f6660; font-size: 10px; line-height: 1.5; margin-top: 2px; }
 .advisor-option.selected { background: #fcf7f7; border-color: #9c454c; box-shadow: 0 0 0 1px #9c454c; }
 .advisor-option:hover { border-color: #c8878c; }
 .advisor-photo::after { background: #76a66a; }
