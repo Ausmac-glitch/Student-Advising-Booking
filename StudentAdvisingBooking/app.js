@@ -664,7 +664,7 @@ function generateAdminReport() {
     </section>
     <section class="admin-report-section">
       <h3>Canceled meetings</h3>
-      <p class="admin-report-note">Cancellations grouped by the date they were recorded. Cancellations made before tracking was added cannot be included.</p>
+      <p class="admin-report-note">Cancellations grouped by the date they were recorded.</p>
       <div class="admin-report-table-wrap"><table class="admin-report-table">
         <thead><tr><th>Advisor</th>${periods.map((period) => `<th>${period.label}</th>`).join("")}</tr></thead>
         <tbody>${advisors.map((advisor) => `<tr><th scope="row">${escapeHTML(advisor.name)}</th>${periods.map((period) => `<td>${countFor(canceledAppointments, advisor.id, period.matches, (appointment) => dateKey(new Date(appointment.cancelledAt)))}</td>`).join("")}</tr>`).join("")}</tbody>
